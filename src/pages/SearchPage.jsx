@@ -1,4 +1,4 @@
-// src/pages/SearchPage.jsx - FINAL OPTIMIZED VERSION
+// src/pages/SearchPage.jsx - CORRECTED FULL CODE WITH PROPER CSV MAPPING
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
@@ -17,8 +17,8 @@ import { fetchBusinessesWithCache } from '../lib/GoogleSheetService';
 // Safe star count helper
 const getSafeStarCount = (rating) => {
   if (!rating) return 0;
-  const parsed = parseInt(rating);
-  return isNaN(parsed) ? 0 : Math.min(5, Math.max(0, parsed));
+  const parsed = parseFloat(rating);
+  return isNaN(parsed) ? 0 : Math.min(5, Math.max(0, Math.round(parsed)));
 };
 
 const SearchPage = () => {
@@ -37,21 +37,21 @@ const SearchPage = () => {
   const [ratingFilter, setRatingFilter] = useState('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // Categories - UPDATED FROM YOUR DATA
+  // Categories with proper mapping to CSV data
   const categories = [
     {
       label: 'Steel Sector',
       icon: '⚙️',
       color: 'from-gray-500 to-slate-600',
       description: 'TMT steel dealers, structural steel, steel distributors.',
-      subcategories: ['TMT', 'Steel Distributors', 'Structural Steel', 'Iron and steel store']
+      subcategories: ['TMT', 'Steel Distributors', 'Structural Steel', 'Iron and steel store', 'Steel industry', 'Manufacturer']
     },
     {
       label: 'Cement Sector',
       icon: '🏗️',
       color: 'from-blue-500 to-cyan-500',
       description: 'Cement dealers, bulk cement suppliers, cement manufacturers.',
-      subcategories: ['Cement', 'Cement Dealers', 'Bulk Cement', 'Cement Manufacturer']
+      subcategories: ['Cement', 'Cement Dealers', 'Cement supplier', 'Cement manufacturer', 'Building materials supplier']
     },
     {
       label: 'Ready-Mix Concrete',
@@ -72,21 +72,21 @@ const SearchPage = () => {
       icon: '📊',
       color: 'from-green-500 to-emerald-500',
       description: 'Architects, structural engineers, design consultants.',
-      subcategories: ['Architect', 'Architecture firm', 'Interior Designers']
+      subcategories: ['Architect', 'Architecture firm', 'Interior Designers', 'Interior designer']
     },
     {
       label: 'Construction Services',
       icon: '👷',
       color: 'from-purple-500 to-pink-500',
       description: 'Construction companies, contractors, builders.',
-      subcategories: ['Construction company', 'Contractors', 'Builders']
+      subcategories: ['Construction company', 'Contractors', 'Builders', 'Construction']
     },
     {
       label: 'Rentals & Services',
       icon: '🔄',
       color: 'from-indigo-500 to-blue-500',
       description: 'Vehicle rentals, equipment rentals, service providers.',
-      subcategories: ['Car rental', 'Houseboat rental', 'Motorcycle rental']
+      subcategories: ['Car rental', 'Houseboat rental', 'Motorcycle rental', 'Car leasing']
     }
   ];
 
@@ -117,13 +117,41 @@ const SearchPage = () => {
     }).length;
   };
 
+  // Format phone number properly
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return null;
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Format as XXX-XXX-XXXX or XXXX-XXXXXX
+    if (cleaned.length >= 10) {
+      return cleaned.slice(0, 10).replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+    return phone;
+  };
+
   // Fetch businesses
   useEffect(() => {
     const loadBusinesses = async () => {
       setLoading(true);
       try {
         const data = await fetchBusinessesWithCache();
-        setBusinesses(data);
+        // Map CSV fields to component fields
+        const mappedData = data.map(b => ({
+          ...b,
+          phone: b.phone_number || b.phone || '', // Handle both field names
+          rating: b.review || b.rating || 0,
+          rating_count: b.rating_count || 0,
+          address: b.address || b.location || '',
+          subcategory: b.subcategory || '',
+          category: b.category || '',
+          district: b.district || '',
+          name: b.name || '',
+          website: b.website || '',
+          email: b.email_id || b.email || '',
+          map_location: b.map_link || '',
+          gst_number: b.gst_number || ''
+        }));
+        setBusinesses(mappedData);
       } catch (error) {
         console.error('Error loading businesses:', error);
       } finally {
@@ -143,8 +171,7 @@ const SearchPage = () => {
         business.name?.toLowerCase().includes(searchLower) ||
         business.category?.toLowerCase().includes(searchLower) ||
         business.subcategory?.toLowerCase().includes(searchLower) ||
-        business.address?.toLowerCase().includes(searchLower) ||
-        business.tags?.toLowerCase().includes(searchLower)
+        business.address?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -178,7 +205,7 @@ const SearchPage = () => {
     }
 
     if (verifiedOnly) {
-      filtered = filtered.filter(business => business.gst_number);
+      filtered = filtered.filter(business => business.gst_number && business.gst_number.trim() !== '');
     }
 
     // Sort
@@ -262,7 +289,7 @@ const SearchPage = () => {
             </motion.div>
           ))}
         </div>
-        <span className="text-sm font-semibold text-gray-700">{rating}</span>
+        <span className="text-sm font-semibold text-gray-700">{rating || '0'}</span>
         {count && <span className="text-xs text-gray-500">({count})</span>}
       </div>
     );
@@ -271,7 +298,8 @@ const SearchPage = () => {
   // Professional Card Component
   const ProfessionalCard = ({ business, index }) => {
     const gradientClass = getCategoryColor(business.category);
-    const isVerified = business.gst_number;
+    const isVerified = business.gst_number && business.gst_number.trim() !== '';
+    const formattedPhone = formatPhoneNumber(business.phone);
 
     return (
       <motion.div
@@ -331,14 +359,15 @@ const SearchPage = () => {
                 </motion.div>
               )}
 
-              {business.phone && (
+              {formattedPhone && (
                 <motion.div className="flex items-center gap-3" whileHover={{ x: 4 }}>
                   <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <a
-                    href={`tel:${business.phone.replace(/\s/g, '')}`}
+                    href={`tel:${business.phone.replace(/\D/g, '')}`}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium truncate hover:underline"
+                    title={business.phone}
                   >
-                    {business.phone}
+                    {formattedPhone}
                   </a>
                 </motion.div>
               )}
@@ -349,6 +378,7 @@ const SearchPage = () => {
                   <a
                     href={`mailto:${business.email}`}
                     className="text-sm text-red-600 hover:text-red-700 font-medium truncate hover:underline"
+                    title={business.email}
                   >
                     {business.email}
                   </a>
@@ -405,7 +435,8 @@ const SearchPage = () => {
   // Compact List View
   const CompactListCard = ({ business, index }) => {
     const gradientClass = getCategoryColor(business.category);
-    const isVerified = business.gst_number;
+    const isVerified = business.gst_number && business.gst_number.trim() !== '';
+    const formattedPhone = formatPhoneNumber(business.phone);
 
     return (
       <motion.div
@@ -442,13 +473,21 @@ const SearchPage = () => {
               </div>
 
               <div className="md:col-span-3">
-                {business.phone && (
-                  <a href={`tel:${business.phone}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-1">
-                    <Phone className="w-3 h-3" /> {business.phone}
+                {formattedPhone && (
+                  <a 
+                    href={`tel:${business.phone.replace(/\D/g, '')}`} 
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-1"
+                    title={business.phone}
+                  >
+                    <Phone className="w-3 h-3" /> {formattedPhone}
                   </a>
                 )}
                 {business.email && (
-                  <a href={`mailto:${business.email}`} className="text-sm text-red-600 hover:underline truncate flex items-center gap-1">
+                  <a 
+                    href={`mailto:${business.email}`} 
+                    className="text-sm text-red-600 hover:underline truncate flex items-center gap-1"
+                    title={business.email}
+                  >
                     <Mail className="w-3 h-3" /> {business.email}
                   </a>
                 )}
@@ -462,6 +501,7 @@ const SearchPage = () => {
                     className="px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-1"
                   >
                     <Map className="w-4 h-4" />
+                    Map
                   </motion.button>
                 )}
                 {business.website && (
