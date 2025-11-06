@@ -5,9 +5,7 @@ export default function iframeRouteRestorationPlugin() {
     transformIndexHtml() {
       const script = `
       const ALLOWED_PARENT_ORIGINS = [
-          "https://horizons.hostinger.com",
-          "https://horizons.hostinger.dev",
-          "https://horizons-frontend-local.hostinger.dev",
+        "https://builddirectory.netlify.app/"
       ];
 
         // Check to see if the page is in an iframe

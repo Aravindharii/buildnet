@@ -50,7 +50,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-2">
-                <img alt="BuildNet logo" class="h-10 w-auto" src="https://horizons-cdn.hostinger.com/5d6d429a-e3e0-4553-9214-38ce43e19849/buildnet-6yHuu.jpg" />
+                {/* <img alt="BuildNet logo" class="h-10 w-auto" src="https://horizons-cdn.hostinger.com/5d6d429a-e3e0-4553-9214-38ce43e19849/buildnet-6yHuu.jpg" /> */}
                 <span className="text-2xl font-bold text-emerald-600">BuildNetAI</span>
               </div>
               <div className="flex items-center space-x-2">
@@ -71,7 +71,7 @@ const HomePage = () => {
         <main>
           <div className="relative pt-16 pb-20 text-center">
              <div className="absolute inset-0">
-                <img class="w-full h-full object-cover" alt="Kerala construction site background" src="https://horizons-cdn.hostinger.com/5d6d429a-e3e0-4553-9214-38ce43e19849/ai-market-place-for-construction-industry-3gwqf.jpg" />
+                <img class="w-full h-full object-cover" alt="Kerala construction site background"  />
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             </div>
             <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
