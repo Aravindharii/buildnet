@@ -257,7 +257,6 @@ const SearchPage = () => {
     );
   };
 
-  // Business card
   const ProfessionalCard = ({ business, index }) => {
     const color = getCategoryColor(business.category);
     const isVerified = business.gst_number && business.gst_number.trim() !== '';
@@ -266,7 +265,7 @@ const SearchPage = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: index * 0.03 }} className="h-full group">
         <div className="relative h-full rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
           <div className={`h-1.5 bg-gradient-to-r ${color}`}></div>
-          <div className="p-6 relative">
+          <div className="p-4 sm:p-6 relative">
             <div className="absolute top-4 right-4 flex gap-2">
               {isVerified && (
                 <motion.div whileHover={{ scale: 1.1 }} title="GST Verified">
@@ -274,11 +273,11 @@ const SearchPage = () => {
                 </motion.div>
               )}
             </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-emerald-600 transition-colors mb-2">{business.name}</h3>
-              <div className="flex flex-wrap gap-2 mb-3">
+            <div className="mb-3">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-emerald-600 transition-colors mb-1">{business.name}</h3>
+              <div className="flex flex-wrap gap-2 mb-2">
                 <motion.div whileHover={{ scale: 1.05 }}>
-                  <Badge className={`bg-gradient-to-r ${color} text-white border-0`}>{business.category}</Badge>
+                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-sm`}>{business.category}</Badge>
                 </motion.div>
                 {business.subcategory && business.subcategory !== business.category && (
                   <Badge variant="outline" className="text-xs bg-gray-50">{business.subcategory}</Badge>
@@ -287,7 +286,7 @@ const SearchPage = () => {
               {business.rating && <StarRating rating={business.rating} count={business.rating_count} />}
             </div>
             <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-4"></div>
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2 mb-4">
               {business.district && (
                 <motion.div className="flex items-start gap-3" whileHover={{ x: 4 }}>
                   <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
@@ -324,15 +323,15 @@ const SearchPage = () => {
               )}
             </div>
             <div className="space-y-2 pt-2 border-t">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {business.map_location && (
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.map_location, '_blank')} className="flex-1 px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.map_location, '_blank')} className="flex-1 min-w-[120px] px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2">
                     <Map className="w-4 h-4" />
                     Map
                   </motion.button>
                 )}
                 {business.website && (
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="flex-1 px-3 py-2 border-2 border-emerald-500 text-emerald-600 rounded-lg font-medium text-sm hover:bg-emerald-50 transition-all">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="flex-1 min-w-[120px] px-3 py-2 border-2 border-emerald-500 text-emerald-600 rounded-lg font-medium text-sm hover:bg-emerald-50 transition-all">
                     Visit
                   </motion.button>
                 )}
@@ -344,7 +343,6 @@ const SearchPage = () => {
     );
   };
 
-  // Compact list card (for list view)
   const CompactListCard = ({ business, index }) => {
     const color = getCategoryColor(business.category);
     const isVerified = business.gst_number && business.gst_number.trim() !== '';
@@ -353,16 +351,16 @@ const SearchPage = () => {
     return (
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ delay: index * 0.02 }}>
         <div className="bg-white rounded-xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden mb-3 hover:-translate-y-0.5">
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-              <div className="md:col-span-3">
-                <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{business.name}</h3>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+              <div className="sm:col-span-3">
+                <h3 className="font-bold text-gray-900 line-clamp-1 mb-1 text-base sm:text-lg">{business.name}</h3>
                 <div className="flex items-center gap-2">
-                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-xs`}>{business.category}</Badge>
+                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-xs sm:text-sm`}>{business.category}</Badge>
                   {isVerified && <CheckCircle className="w-4 h-4 text-green-500" />}
                 </div>
               </div>
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2">
                 <div className="flex items-center gap-1 mb-1">
                   <MapPin className="w-4 h-4 text-gray-500" />
                   <span className="text-sm font-medium text-gray-700">{business.district}</span>
@@ -375,9 +373,9 @@ const SearchPage = () => {
                   </div>
                 )}
               </div>
-              <div className="md:col-span-3">
+              <div className="sm:col-span-3">
                 {formattedPhone && (
-                  <a href={`tel:${business.phone.replace(/\D/g, '')}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-1" title={business.phone}>
+                  <a href={`tel:${business.phone.replace(/\D/g, '')}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-1 truncate" title={business.phone}>
                     <Phone className="w-3 h-3" /> {formattedPhone}
                   </a>
                 )}
@@ -387,7 +385,7 @@ const SearchPage = () => {
                   </a>
                 )}
               </div>
-              <div className="md:col-span-4 flex gap-2">
+              <div className="sm:col-span-4 flex gap-2 flex-wrap">
                 {business.map_location && (
                   <motion.button whileHover={{ scale: 1.05 }} onClick={() => window.open(business.map_location, '_blank')} className="px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-1">
                     <Map className="w-4 h-4" />
@@ -395,7 +393,7 @@ const SearchPage = () => {
                   </motion.button>
                 )}
                 {business.website && (
-                  <motion.button whileHover={{ scale: 1.05 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="px-3 py-1.5 text-sm border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1">
+                  <motion.button whileHover={{ scale: 1.05 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="px-3 py-1.5 text-sm border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1 truncate">
                     <Globe className="w-4 h-4" />
                   </motion.button>
                 )}
@@ -407,103 +405,102 @@ const SearchPage = () => {
     );
   };
 
+  const SelectedCategoryShowcase = () => {
+    const categoryObj = getSelectedCategoryObj();
+    if (!categoryObj) return null;
 
-const SelectedCategoryShowcase = () => {
-  const categoryObj = getSelectedCategoryObj();
-  if (!categoryObj) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`bg-gradient-to-r ${categoryObj.color} rounded-2xl p-8 mb-8 text-white shadow-xl`}
-    >
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="text-5xl mb-3">{categoryObj.icon}</div>
-          <h2 className="text-3xl font-bold mb-2">{categoryObj.label}</h2>
-          <p className="text-white/90 text-lg">{categoryObj.description}</p>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          onClick={() => {
-            setSelectedCategory('all');
-            setSelectedSubcategory('all');
-          }}
-          className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-full transition-all"
-        >
-          <X className="w-6 h-6" />
-        </motion.button>
-      </div>
-      <div>
-        <label className="text-sm font-semibold opacity-90 mb-3 block">Filter by type:</label>
-        <div className="flex flex-wrap gap-2">
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className={`bg-gradient-to-r ${categoryObj.color} rounded-2xl p-6 sm:p-8 mb-8 text-white shadow-xl`}
+      >
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <div className="text-4xl sm:text-5xl mb-3">{categoryObj.icon}</div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">{categoryObj.label}</h2>
+            <p className="text-white/90 text-base sm:text-lg">{categoryObj.description}</p>
+          </div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            onClick={() => setSelectedSubcategory('all')}
-            className={`px-4 py-2 rounded-full font-medium transition-all ${
-              selectedSubcategory === 'all'
-                ? 'bg-white text-gray-900 shadow-lg'
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
+            whileHover={{ scale: 1.1 }}
+            onClick={() => {
+              setSelectedCategory('all');
+              setSelectedSubcategory('all');
+            }}
+            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2 sm:p-3 rounded-full transition-all"
+            aria-label="Clear category filter"
           >
-            All Types
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </motion.button>
-          {categoryObj.subcategories.map((subcat) => (
+        </div>
+        <div>
+          <label className="text-sm sm:text-base font-semibold opacity-90 mb-3 block">Filter by type:</label>
+          <div className="flex flex-wrap gap-2">
             <motion.button
-              key={subcat}
               whileHover={{ scale: 1.05 }}
-              onClick={() => setSelectedSubcategory(subcat)}
-              className={`px-4 py-2 rounded-full font-medium transition-all ${
-                selectedSubcategory === subcat
+              onClick={() => setSelectedSubcategory('all')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium transition-all text-sm sm:text-base ${
+                selectedSubcategory === 'all'
                   ? 'bg-white text-gray-900 shadow-lg'
                   : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
-              {subcat}
+              All Types
             </motion.button>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-
-const CategoryCard = ({ category, index }) => {
-  const count = getCategoryCount(category.label);
-
-  return (
-    <motion.button
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -8 }}
-      onClick={() => {
-        setSelectedCategory(category.label);
-        setSelectedSubcategory('all');
-      }}
-      className="relative group h-full"
-    >
-      <div className={`h-full rounded-2xl bg-gradient-to-br ${category.color} p-6 text-white shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden`}>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-white transform group-hover:scale-110 transition-transform duration-300"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="text-5xl mb-3">{category.icon}</div>
-          <h3 className="text-xl font-bold mb-2">{category.label}</h3>
-          <p className="text-sm opacity-90 mb-4 line-clamp-2">{category.description}</p>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full">
-              {count} providers
-            </span>
-            <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            {categoryObj.subcategories.map((subcat) => (
+              <motion.button
+                key={subcat}
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setSelectedSubcategory(subcat)}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium transition-all text-sm sm:text-base ${
+                  selectedSubcategory === subcat
+                    ? 'bg-white text-gray-900 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                {subcat}
+              </motion.button>
+            ))}
           </div>
         </div>
-      </div>
-    </motion.button>
-  );
-};
+      </motion.div>
+    );
+  };
+
+  const CategoryCard = ({ category, index }) => {
+    const count = getCategoryCount(category.label);
+
+    return (
+      <motion.button
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -8 }}
+        onClick={() => {
+          setSelectedCategory(category.label);
+          setSelectedSubcategory('all');
+        }}
+        className="relative group h-full"
+      >
+        <div className={`h-full rounded-2xl bg-gradient-to-br ${category.color} p-4 sm:p-6 text-white shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden`}>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-white transform group-hover:scale-110 transition-transform duration-300"></div>
+          </div>
+          <div className="relative z-10">
+            <div className="text-4xl sm:text-5xl mb-3">{category.icon}</div>
+            <h3 className="text-lg sm:text-xl font-bold mb-2">{category.label}</h3>
+            <p className="text-sm sm:text-base opacity-90 mb-4 line-clamp-2">{category.description}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
+                {count} providers
+              </span>
+              <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            </div>
+          </div>
+        </div>
+      </motion.button>
+    );
+  };
 
   return (
     <>
@@ -513,32 +510,32 @@ const CategoryCard = ({ category, index }) => {
       </Helmet>
       <div className="min-h-screen pb-20 bg-gradient-to-br from-gray-50 via-white to-emerald-50">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-10 px-4 sticky top-0 z-40 shadow-2xl">
+        <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-8 px-4 sm:py-10 sm:px-6 sticky top-0 z-40 shadow-2xl">
           <div className="max-w-7xl mx-auto">
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
-              className="text-white hover:bg-white/20 mb-4 group"
+              className="text-white hover:bg-white/20 mb-3 sm:mb-4 group"
             >
-              <motion.div whileHover={{ x: -4 }} className="flex items-center gap-2">
+              <motion.div whileHover={{ x: -4 }} className="flex items-center gap-2 text-sm sm:text-base">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
               </motion.div>
             </Button>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-100 to-white">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-1 sm:mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-100 to-white">
               Professional Directory
             </h1>
-            <p className="text-emerald-100 text-lg">Discover industry-leading service providers across Kerala</p>
+            <p className="text-emerald-100 text-sm sm:text-lg">Discover industry-leading service providers across Kerala</p>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Category Grid */}
           {selectedCategory === 'all' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Browse by Category</h2>
-              <p className="text-gray-600 mb-8">Select a category to explore businesses</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-10 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Browse by Category</h2>
+              <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">Select a category to explore businesses</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
                 {categories.map((category, index) => (
                   <CategoryCard key={category.label} category={category} index={index} />
                 ))}
@@ -552,22 +549,22 @@ const CategoryCard = ({ category, index }) => {
           </AnimatePresence>
 
           {/* Search & Filter Section */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 mb-8 shadow-xl border border-white/40">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 shadow-xl border border-white/40">
             {/* Search Bar */}
-            <div className="mb-6">
+            <div className="mb-5 sm:mb-6">
               <motion.div whileHover={{ scale: 1.02 }} className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-emerald-600 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600 h-4 w-4 sm:h-5 sm:w-5" />
                 <Input
                   placeholder="Search by name, category, location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-14 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-xl text-lg"
+                  className="pl-10 h-10 sm:h-14 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-xl text-sm sm:text-lg"
                 />
               </motion.div>
             </div>
 
             {/* Filter Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
               <Select
                 value={selectedCategory}
                 onValueChange={(value) => {
@@ -575,7 +572,7 @@ const CategoryCard = ({ category, index }) => {
                   setSelectedSubcategory('all');
                 }}
               >
-                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -592,7 +589,7 @@ const CategoryCard = ({ category, index }) => {
               </Select>
 
               <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
-                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
                   <SelectValue placeholder="District" />
                 </SelectTrigger>
                 <SelectContent>
@@ -605,7 +602,7 @@ const CategoryCard = ({ category, index }) => {
               </Select>
 
               <Select value={sortField} onValueChange={setSortField}>
-                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -621,7 +618,8 @@ const CategoryCard = ({ category, index }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                className="h-12 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                aria-label="Toggle sort order"
               >
                 {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
                 {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
@@ -632,7 +630,9 @@ const CategoryCard = ({ category, index }) => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="flex items-center gap-2 text-emerald-600 font-semibold mb-4 hover:text-emerald-700"
+              className="flex items-center gap-2 text-emerald-600 font-semibold mb-3 sm:mb-4 hover:text-emerald-700 text-sm sm:text-base"
+              aria-expanded={showAdvancedFilters}
+              aria-controls="advanced-filters"
             >
               <Filter className="w-4 h-4" />
               Advanced Filters
@@ -644,16 +644,17 @@ const CategoryCard = ({ category, index }) => {
             <AnimatePresence>
               {showAdvancedFilters && (
                 <motion.div
+                  id="advanced-filters"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   className="mb-6 pt-6 border-t-2 border-emerald-100"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
                       <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                        <SelectTrigger className="border-2 border-emerald-200 rounded-lg">
+                        <SelectTrigger className="border-2 border-emerald-200 rounded-lg text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -670,11 +671,12 @@ const CategoryCard = ({ category, index }) => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         onClick={() => setVerifiedOnly(!verifiedOnly)}
-                        className={`w-full px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                        className={`w-full px-3 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 text-sm ${
                           verifiedOnly
                             ? 'bg-green-500 text-white shadow-lg'
                             : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
                         }`}
+                        aria-pressed={verifiedOnly}
                       >
                         <CheckCircle className="w-4 h-4" />
                         GST Verified Only
@@ -691,7 +693,7 @@ const CategoryCard = ({ category, index }) => {
                           setRatingFilter('all');
                           setVerifiedOnly(false);
                         }}
-                        className="w-full px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-all"
+                        className="w-full px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-all text-sm"
                       >
                         Reset All
                       </motion.button>
@@ -703,11 +705,11 @@ const CategoryCard = ({ category, index }) => {
 
             {/* Filter Chips */}
             {filterChips.length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap gap-2 mb-4 pb-4 border-b">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap md:flex-nowrap gap-2 mb-4 pb-4 border-b overflow-x-auto">
                 {filterChips.map((chip, idx) => (
-                  <motion.div key={idx} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2">
+                  <motion.div key={idx} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 whitespace-nowrap">
                     {chip.value}
-                    <button onClick={() => removeChip(chip.type)} className="hover:bg-emerald-200 p-0.5 rounded-full">
+                    <button onClick={() => removeChip(chip.type)} className="hover:bg-emerald-200 p-0.5 rounded-full" aria-label={`Remove filter ${chip.value}`}>
                       <X className="w-3 h-3" />
                     </button>
                   </motion.div>
@@ -716,8 +718,8 @@ const CategoryCard = ({ category, index }) => {
             )}
 
             {/* Controls */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600">
+              <div>
                 Showing <span className="font-bold text-emerald-600 text-lg">{filteredAndSortedBusinesses.length}</span> of{' '}
                 <span className="font-bold text-gray-900 text-lg">{businesses.length}</span> businesses
               </div>
@@ -732,12 +734,14 @@ const CategoryCard = ({ category, index }) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setViewMode(mode)}
-                    className={`px-4 py-2 rounded-md font-medium transition-all flex items-center gap-2 ${
+                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md font-medium transition-all flex items-center gap-2 text-sm ${
                       viewMode === mode ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-600 hover:text-gray-900'
                     }`}
+                    aria-pressed={viewMode === mode}
+                    aria-label={`Switch to ${label} view`}
                   >
                     <Icon className="w-4 h-4" />
-                    {label}
+                    <span className="hidden sm:inline">{label}</span>
                   </motion.button>
                 ))}
               </div>
@@ -746,20 +750,20 @@ const CategoryCard = ({ category, index }) => {
 
           {/* Results */}
           {loading ? (
-            <div className="text-center py-32">
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full mx-auto mb-6" />
-              <p className="text-gray-600 text-lg font-medium">Loading directory...</p>
+            <div className="text-center py-20 sm:py-32">
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full mx-auto mb-4 sm:mb-6" />
+              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading directory...</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">
               {filteredAndSortedBusinesses.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-32">
-                  <Search className="w-24 h-24 mx-auto text-gray-300 mb-6" />
-                  <h3 className="text-3xl font-bold text-gray-600 mb-2">No results found</h3>
-                  <p className="text-gray-500 text-lg">Try adjusting your filters</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-20 sm:py-32">
+                  <Search className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-gray-300 mb-4 sm:mb-6" />
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-600 mb-2">No results found</h3>
+                  <p className="text-gray-500 text-base sm:text-lg">Try adjusting your filters</p>
                 </motion.div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
                   {filteredAndSortedBusinesses.map((business, index) => (
                     <ProfessionalCard key={business.id || index} business={business} index={index} />
                   ))}
