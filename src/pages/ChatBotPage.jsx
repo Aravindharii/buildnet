@@ -1144,13 +1144,13 @@ const ChatBotPageAdvanced = () => {
                   <Search className="w-3 h-3" />
                   Help
                 </button>
-                <button
+                {/* <button
                   onClick={() => handleUserMessage('show resources')}
                   className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
                 >
                   <FileText className="w-3 h-3" />
                   Documents ({resources.length})
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
