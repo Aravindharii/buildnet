@@ -67,7 +67,7 @@ function App() {
         <ShoppingCart isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
 
         {/* Floating WhatsApp Bot Icon */}
-        <motion.button
+        {/* <motion.button
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 1 }}
@@ -76,7 +76,7 @@ function App() {
           aria-label="WhatsApp Bot"
         >
           <Whatsapp className="w-7 h-7" />
-        </motion.button>
+        </motion.button> */}
       </div>
     </>
   );
