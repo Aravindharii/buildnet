@@ -1,11 +1,20 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, ArrowLeft, RefreshCcw, X, MapPin, Phone, Globe, Mail, Star, User, Search, Building, Navigation, ChevronRight, Home, Filter } from 'lucide-react';
+import { 
+  Send, Bot, ArrowLeft, RefreshCcw, MapPin, Phone, Globe, 
+  User, Search, Building, Navigation, Home, Filter, FileText,
+  Download, ExternalLink, MessageSquare, Sparkles
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { fetchBusinessesWithCache } from '../lib/GoogleSheetService';
+import { 
+  fetchDriveResourcesWithCache, 
+  askAllFilesQuestion, 
+  askFileQuestion 
+} from '../lib/driveservice';
 
 // Enhanced categories with direct mapping
 const categories = [
@@ -69,15 +78,16 @@ const districts = [
 // AI Response templates
 const aiResponses = {
   greeting: [
-    "Hello! 👋 I'm your Construction Assistant AI. I can help you find construction materials, suppliers, and professionals across Kerala.",
-    "Hi there! 🏗️ I'm here to help you with all your construction needs. Let me know what you're looking for!",
-    "Welcome! 🌟 I'm your AI construction assistant. Tell me what you need and I'll find the best options."
+    "Hello! 👋 I'm your Construction Assistant AI. I can help you find construction materials, suppliers, and professionals across Kerala. I can also answer questions about construction documents!",
+    "Hi there! 🏗️ I'm here to help you with all your construction needs. Ask me about suppliers or construction documents!",
+    "Welcome! 🌟 I'm your AI construction assistant. I can find suppliers and answer questions from your construction documents!"
   ],
   categorySelected: "Great choice! You've selected {category}. Now, which district would you like to search in?",
   districtSelected: "Perfect! I'm searching for {category} suppliers in {district}. Finding the best options for you...",
   noResults: "I couldn't find any {category} suppliers in {district}. Try selecting a different district or category.",
   searchResults: "🎉 Found {count} {category} suppliers in {district}. Here are the best matches:",
-  help: "I can help you find:\n• Steel & TMT suppliers\n• Cement dealers\n• Ready-mix concrete\n• Construction equipment\n• Architects & consultants\n• Construction services\n• Rental services",
+  help: "I can help you:\n• Find Steel & TMT suppliers\n• Locate Cement dealers\n• Search Ready-mix concrete\n• Find Construction equipment\n• Locate Architects & consultants\n• Answer questions about construction documents 📄",
+  resources: "📚 I found {count} construction resource documents for you. Check the sidebar to view and download them!",
   default: "I understand you're looking for construction resources. Let me help you find exactly what you need!"
 };
 
@@ -110,9 +120,92 @@ const formatPhoneNumber = (phone) => {
   return phone;
 };
 
+// ✅ NEW: Function to clean markdown formatting from text
+const cleanMarkdownFormatting = (text) => {
+  if (!text) return '';
+  
+  // Remove ** bold markers
+  let cleaned = text.replace(/\*\*/g, '');
+  
+  // Remove _ italic markers (optional)
+  cleaned = cleaned.replace(/\_\_/g, '');
+  
+  return cleaned;
+};
+
+// ✅ NEW: Enhanced text renderer with proper formatting
+const FormattedText = ({ text, className = '' }) => {
+  if (!text) return null;
+  
+  // Clean markdown
+  const cleanedText = cleanMarkdownFormatting(text);
+  
+  // Split by newlines and render
+  const lines = cleanedText.split('\n');
+  
+  return (
+    <div className={className}>
+      {lines.map((line, index) => {
+        // Handle bullet points
+        if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+          return (
+            <div key={index} className="flex gap-2 mb-1">
+              <span className="text-emerald-500 font-bold">•</span>
+              <span className="flex-1">{line.replace(/^[•\-]\s*/, '')}</span>
+            </div>
+          );
+        }
+        
+        // Handle numbered lists
+        if (/^\d+\./.test(line.trim())) {
+          const match = line.match(/^(\d+\.)\s*(.+)$/);
+          if (match) {
+            return (
+              <div key={index} className="flex gap-2 mb-1">
+                <span className="text-emerald-600 font-semibold">{match[1]}</span>
+                <span className="flex-1">{match[2]}</span>
+              </div>
+            );
+          }
+        }
+        
+        // Handle section headers (lines ending with :)
+        if (line.trim().endsWith(':') && line.length < 80) {
+          return (
+            <div key={index} className="font-semibold text-gray-900 mt-3 mb-1">
+              {line}
+            </div>
+          );
+        }
+        
+        // Handle warnings/important notes
+        if (line.includes('⚠️') || line.includes('💡')) {
+          return (
+            <div key={index} className="bg-amber-50 border-l-4 border-amber-400 p-2 my-2 rounded">
+              {line}
+            </div>
+          );
+        }
+        
+        // Regular paragraph
+        if (line.trim()) {
+          return <p key={index} className="mb-2">{line}</p>;
+        }
+        
+        // Empty line
+        return <div key={index} className="h-2" />;
+      })}
+    </div>
+  );
+};
+
 const ChatBotPageAdvanced = () => {
   const navigate = useNavigate();
+  
+  // State management
   const [businesses, setBusinesses] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [messages, setMessages] = useState([
@@ -128,23 +221,35 @@ const ChatBotPageAdvanced = () => {
   const [loading, setLoading] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [showQuickReplies, setShowQuickReplies] = useState(true);
-  const [currentStep, setCurrentStep] = useState('category'); // category -> district -> results
+  const [currentStep, setCurrentStep] = useState('category');
+  const [isAnsweringQuestion, setIsAnsweringQuestion] = useState(false);
+  
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const quickReplies = [
+    "Find TMT steel",
+    "Need cement suppliers",
+    "What are the safety guidelines?",
+    "Tell me about construction codes",
+    "Show resources"
+  ];
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, filteredResults]);
 
-  // Load businesses
-useEffect(() => {
-  setLoading(true);
-  fetchBusinessesWithCache()
-    .then((data) => {
-      // Map each business ensuring fallback for missing keys, type normalization
-      const mapped = data.map((b, index) => {
-        return {
+  // Load businesses from Google Sheets
+  useEffect(() => {
+    console.log('[ChatBot] 🔄 Initializing business data fetch');
+    setLoading(true);
+    
+    fetchBusinessesWithCache()
+      .then((data) => {
+        console.log(`[ChatBot] ✅ Received ${data.length} businesses`);
+        
+        const mapped = data.map((b, index) => ({
           id: b.id || b.uniqueid || `business-${index}-${Date.now()}`,
           name: b.name || b.Name || "Unknown Business",
           category: b.category || b.Category || "General",
@@ -161,40 +266,54 @@ useEffect(() => {
           image_source: b.image_source || "",
           tags: b.TAGS || "",
           products: b.PRODUCTS || "",
-          ...b, // Preserve any other fields as-is
-        };
-      });
-      setBusinesses(mapped);
-    })
-    .catch((error) => {
-      console.error("Error loading business data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load business data.",
-        variant: "destructive",
-      });
-    })
-    .finally(() => setLoading(false));
-}, []);
+          ...b,
+        }));
+        
+        setBusinesses(mapped);
+        console.log('[ChatBot] ✅ Businesses loaded successfully');
+      })
+      .catch((error) => {
+        console.error("[ChatBot] ❌ Error loading businesses:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load business data.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
+  // Load resources from Google Drive
+  useEffect(() => {
+    console.log('[ChatBot] 📁 Initializing Google Drive resources');
+    setResourcesLoading(true);
+    
+    fetchDriveResourcesWithCache()
+      .then((files) => {
+        console.log(`[ChatBot] ✅ Received ${files.length} Drive resources`);
+        setResources(files);
+      })
+      .catch((error) => {
+        console.error('[ChatBot] ❌ Error loading resources:', error);
+        setResources([]);
+      })
+      .finally(() => setResourcesLoading(false));
+  }, []);
 
-  // Enhanced filter function with direct category mapping
+  // Enhanced filter function
   const filterBusinesses = (category, district) => {
     if (!category) return [];
     
+    console.log(`[ChatBot] 🔍 Filtering: ${category} in ${district}`);
     let filtered = businesses;
 
-    // Filter by category keywords
     if (category && category.toLowerCase() !== 'all') {
       const selectedCat = categories.find(cat => cat.label === category);
       if (selectedCat) {
         filtered = filtered.filter(b => {
           const businessText = `
-            ${b.category || ''} 
-            ${b.subcategory || ''} 
-            ${b.name || ''} 
-            ${b.tags || ''} 
-            ${b.products || ''}
+            ${b.category || ''} ${b.subcategory || ''} ${b.name || ''} 
+            ${b.tags || ''} ${b.products || ''}
           `.toLowerCase();
           
           return selectedCat.keywords.some(keyword => 
@@ -204,13 +323,13 @@ useEffect(() => {
       }
     }
 
-    // Filter by district
     if (district && district.toLowerCase() !== 'all districts') {
       filtered = filtered.filter(b => 
         b.district && b.district.toLowerCase().includes(district.toLowerCase())
       );
     }
 
+    console.log(`[ChatBot] ✅ Found ${filtered.length} results`);
     return filtered;
   };
 
@@ -235,11 +354,16 @@ useEffect(() => {
         .replace('{category}', context.category)
         .replace('{district}', context.district);
     }
+    if (context.resources) {
+      return aiResponses.resources.replace('{count}', context.count);
+    }
     return aiResponses.default;
   };
 
   // Handle category selection
   const handleCategorySelect = (category) => {
+    console.log(`[ChatBot] 📋 Category selected: ${category.label}`);
+    
     const userMsg = {
       id: Date.now(),
       text: `I'm interested in ${category.label}`,
@@ -261,13 +385,14 @@ useEffect(() => {
         timestamp: new Date(),
         type: 'text'
       };
-      
       setMessages(prev => [...prev, botMsg]);
     }, 800);
   };
 
   // Handle district selection
   const handleDistrictSelect = (district) => {
+    console.log(`[ChatBot] 📍 District selected: ${district}`);
+    
     const userMsg = {
       id: Date.now(),
       text: `Search in ${district}`,
@@ -319,9 +444,11 @@ useEffect(() => {
     }, 1500);
   };
 
-  // Handle user text message
-  const handleUserMessage = (message) => {
+  // ✅ ENHANCED: Handle user messages with document Q&A
+  const handleUserMessage = async (message) => {
     if (!message.trim()) return;
+    
+    console.log(`[ChatBot] 💬 User: "${message}"`);
     
     const userMsg = {
       id: Date.now(),
@@ -335,26 +462,137 @@ useEffect(() => {
     setUserInput('');
     setShowQuickReplies(false);
     
-    // Simple intent detection
+    const messageLower = message.toLowerCase();
+    
+    // ✅ ENHANCED: Broader document question detection
+    const documentKeywords = [
+      // Explicit document references
+      'document', 'pdf', 'file', 'paper', 'report',
+      
+      // Question words (usually indicate seeking information)
+      'what is', 'what are', 'tell me about', 'explain', 'describe',
+      'how to', 'how do', 'why', 'when', 'where',
+      
+      // Construction-specific terms
+      'guideline', 'specification', 'standard', 'code', 'regulation',
+      'safety', 'procedure', 'method', 'requirement', 'material',
+      'quality', 'construction', 'building', 'design', 'plan',
+      'structure', 'foundation', 'reinforcement', 'concrete',
+      'drainage', 'water', 'soil', 'ground', 'recharge',
+      'arrangement', 'system', 'installation', 'compliance'
+    ];
+    
+    // Check if message contains any document keyword
+    const isDocumentQuestion = documentKeywords.some(keyword => 
+      messageLower.includes(keyword)
+    );
+    
+    // OR if message ends with question mark
+    const isQuestion = message.trim().endsWith('?') || message.trim().endsWith('.');
+    
+    // Combine conditions
+    const shouldSearchDocuments = (isDocumentQuestion || isQuestion) && resources.length > 0;
+    
+    console.log('[ChatBot] 🔍 Document question detected:', shouldSearchDocuments);
+    console.log('[ChatBot] 📚 Available resources:', resources.length);
+    
+    // ✅ HANDLE DOCUMENT QUESTIONS
+    if (shouldSearchDocuments) {
+      console.log('[ChatBot] 📄 Processing as document question');
+      setIsAnsweringQuestion(true);
+      setLoading(true);
+      
+      // ✅ Hide category/district selection when answering from documents
+      setCurrentStep('document-answer');
+      
+      try {
+        // Show thinking message
+        const thinkingMsg = {
+          id: Date.now() + 1,
+          text: '🤔 Searching through construction documents...',
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'thinking'
+        };
+        setMessages(prev => [...prev, thinkingMsg]);
+        
+        console.log('[ChatBot] 📡 Calling askAllFilesQuestion API...');
+        
+        // Ask the question across all documents
+        const result = await askAllFilesQuestion(message);
+        
+        console.log('[ChatBot] ✅ Received answer from API:', result);
+        
+        // Remove thinking message
+        setMessages(prev => prev.filter(m => m.id !== thinkingMsg.id));
+        
+        // ✅ Clean the answer text before displaying
+        const cleanedAnswer = cleanMarkdownFormatting(result.answer);
+        
+        // Add answer
+        const answerMsg = {
+          id: Date.now() + 2,
+          text: cleanedAnswer,
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'document-answer',
+          sources: result.fileNames || []
+        };
+        
+        setMessages(prev => [...prev, answerMsg]);
+        console.log('[ChatBot] ✅ Document answer displayed');
+        
+      } catch (error) {
+        console.error('[ChatBot] ❌ Error answering question:', error);
+        
+        // Remove thinking message
+        setMessages(prev => prev.filter(m => m.type !== 'thinking'));
+        
+        const errorMsg = {
+          id: Date.now() + 3,
+          text: `Sorry, I encountered an error while searching the documents: ${error.message}\n\nPlease try again or rephrase your question.`,
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'error'
+        };
+        
+        setMessages(prev => [...prev, errorMsg]);
+      } finally {
+        setLoading(false);
+        setIsAnsweringQuestion(false);
+      }
+      return; // Exit early, don't process other intents
+    }
+    
+    // HANDLE OTHER INTENTS (existing logic)
     setTimeout(() => {
-      const messageLower = message.toLowerCase();
       let botResponse = '';
       
-      if (messageLower.match(/\b(hi|hello|hey)\b/)) {
+      if (messageLower.match(/\b(hi|hello|hey|greetings)\b/)) {
+        console.log('[ChatBot] 👋 Greeting detected');
         botResponse = aiResponses.greeting[Math.floor(Math.random() * aiResponses.greeting.length)];
-      } else if (messageLower.match(/\b(help|what can you do)\b/)) {
+        setCurrentStep('category');
+      } else if (messageLower.match(/\b(help|what can you do|how to use)\b/)) {
+        console.log('[ChatBot] ❓ Help requested');
         botResponse = aiResponses.help;
+        setCurrentStep('category');
+      } else if (messageLower.includes('resource') || messageLower.includes('show files') || messageLower.includes('documents')) {
+        console.log('[ChatBot] 📚 Resources requested');
+        botResponse = generateAIResponse({ resources: true, count: resources.length });
+        setCurrentStep('category');
       } else {
-        // Try to match with categories
+        // Try to match with categories (for supplier search)
         const matchedCategory = categories.find(cat => 
           cat.keywords.some(keyword => messageLower.includes(keyword))
         );
         
         if (matchedCategory) {
+          console.log(`[ChatBot] 🎯 Category matched: ${matchedCategory.label}`);
           handleCategorySelect(matchedCategory);
           return;
         } else {
-          botResponse = "I understand you're looking for construction resources. Let me show you the main categories:";
+          console.log('[ChatBot] 🔄 Default response');
+          botResponse = "I understand you're looking for construction resources. Let me show you the main categories, or ask me about the construction documents!";
           setCurrentStep('category');
         }
       }
@@ -371,16 +609,6 @@ useEffect(() => {
     }, 1000);
   };
 
-  // Quick replies
-  const quickReplies = [
-    "Find TMT steel",
-    "Need cement suppliers",
-    "Construction equipment",
-    "Ready mix concrete",
-    "Architects & designers",
-    "Show all categories"
-  ];
-
   // Business Card Component
   const BusinessCard = ({ business }) => {
     const colorClasses = getCategoryColor(business.category);
@@ -390,7 +618,7 @@ useEffect(() => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden"
+        className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group"
       >
         <div className={`bg-gradient-to-r ${colorClasses} p-3 text-white`}>
           <h3 className="font-bold text-sm truncate">{business.name}</h3>
@@ -469,12 +697,14 @@ useEffect(() => {
 
   // Reset chat
   const resetChat = () => {
+    console.log('[ChatBot] 🔄 Resetting chat');
     setSelectedCategory('');
     setSelectedDistrict('');
     setFilteredResults([]);
     setUserInput('');
     setShowQuickReplies(true);
     setCurrentStep('category');
+    setIsAnsweringQuestion(false);
     setMessages([{ 
       id: 0, 
       text: aiResponses.greeting[0], 
@@ -487,15 +717,16 @@ useEffect(() => {
   return (
     <>
       <Helmet>
-        <title>AI Construction Assistant</title>
+        <title>AI Construction Assistant | Kerala Construction</title>
+        <meta name="description" content="AI-powered construction assistant for Kerala. Find suppliers, answer questions from documents." />
       </Helmet>
       
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-hidden">
-        {/* Sidebar - Hidden on mobile */}
+        {/* Sidebar */}
         <motion.div
           initial={{ opacity: 0, x: -60 }}
           animate={{ opacity: 1, x: 0 }}
-          className="hidden lg:flex flex-col w-80 p-4 bg-white/90 backdrop-blur-lg border-r border-gray-200/60"
+          className="hidden lg:flex flex-col w-80 p-4 bg-white/90 backdrop-blur-lg border-r border-gray-200/60 overflow-y-auto"
         >
           <div className="flex items-center justify-between mb-6">
             <button 
@@ -520,6 +751,92 @@ useEffect(() => {
               <div className="text-lg font-bold text-emerald-600">{businesses.length}</div>
               <div className="text-xs text-emerald-700 font-medium">Verified Listings</div>
             </div>
+          </div>
+
+          {/* Resources Section */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold text-sm text-gray-800 flex gap-2 items-center">
+                <FileText className="w-4 h-4 text-emerald-500" />
+                Construction Documents
+              </div>
+              {resourcesLoading && (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  className="text-emerald-500"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                </motion.div>
+              )}
+            </div>
+
+            {!resourcesLoading && resources.length === 0 && (
+              <div className="text-xs text-gray-400 p-2 bg-gray-50 rounded">
+                No documents found
+              </div>
+            )}
+
+            {!resourcesLoading && resources.length > 0 && (
+              <>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 mb-2">
+                  <div className="flex items-center gap-1 text-purple-700 text-xs">
+                    <Sparkles className="w-3 h-3" />
+                    <span className="font-medium">Ask me about these docs!</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                  {resources.map((file, index) => (
+                    <motion.div
+                      key={file.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="group"
+                    >
+                      <div className="bg-white rounded-lg p-2 border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all duration-200">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <FileText className={`w-4 h-4 ${file.mimeType === 'application/pdf' ? 'text-red-500' : 'text-blue-500'}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-900 truncate" title={file.name}>
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {file.type || (file.mimeType === 'application/pdf' ? 'PDF' : 'DOCX')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          <a
+                            href={file.viewLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded text-xs font-medium transition-colors duration-200 flex items-center justify-center gap-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View
+                          </a>
+                          {file.downloadLink && (
+                            <a
+                              href={file.downloadLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-1 px-2 rounded text-xs font-medium transition-colors duration-200 flex items-center justify-center gap-1"
+                            >
+                              <Download className="w-3 h-3" />
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -551,7 +868,7 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Chat Messages Area - Takes most space */}
+          {/* Chat Messages Area */}
           <section className="flex-1 p-3 overflow-y-auto">
             <div className="max-w-4xl mx-auto space-y-3">
               {/* Messages */}
@@ -563,27 +880,49 @@ useEffect(() => {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex gap-2 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                   >
-                    {/* Avatar */}
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
                       message.sender === 'user' 
-                        ? 'bg-gradient-to-br from-blue-500 to-indigo-500' 
-                        : 'bg-gradient-to-br from-emerald-400 to-green-500'
+                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600' 
+                        : message.type === 'document-answer'
+                        ? 'bg-gradient-to-br from-purple-500 to-pink-600'
+                        : 'bg-gradient-to-br from-emerald-500 to-green-600'
                     }`}>
                       {message.sender === 'user' ? (
-                        <User className="w-3 h-3 text-white" />
+                        <User className="w-3.5 h-3.5 text-white" />
+                      ) : message.type === 'document-answer' ? (
+                        <FileText className="w-3.5 h-3.5 text-white" />
                       ) : (
-                        <Bot className="w-3 h-3 text-white" />
+                        <Bot className="w-3.5 h-3.5 text-white" />
                       )}
                     </div>
 
-                    {/* Message Bubble */}
-                    <div className={`max-w-[85%] rounded-lg p-3 ${
+                    <div className={`max-w-[85%] rounded-2xl p-3.5 shadow-md ${
                       message.sender === 'user'
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-br-none'
-                        : 'bg-white text-gray-900 rounded-bl-none border border-gray-200 shadow-sm'
+                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-sm'
+                        : message.type === 'document-answer'
+                        ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 text-gray-900 rounded-bl-sm border-2 border-purple-300'
+                        : message.type === 'thinking'
+                        ? 'bg-gray-100 text-gray-700 rounded-bl-sm border border-gray-300'
+                        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                     }`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
-                      <div className={`text-xs mt-1 ${
+                      {message.type === 'document-answer' ? (
+                        <>
+                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-purple-200">
+                            <FileText className="w-4 h-4 text-purple-600" />
+                            <span className="text-xs font-semibold text-purple-700">Answer from Documents</span>
+                          </div>
+                          <FormattedText text={message.text} className="text-sm leading-relaxed" />
+                          {message.sources && message.sources.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-purple-200">
+                              <p className="text-xs text-gray-600 font-medium mb-1">📚 Sources:</p>
+                              <p className="text-xs text-gray-500">{message.sources.join(', ')}</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <FormattedText text={message.text} className="text-sm leading-relaxed" />
+                      )}
+                      <div className={`text-xs mt-2 ${
                         message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                       }`}>
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -604,7 +943,7 @@ useEffect(() => {
                     <button
                       key={reply}
                       onClick={() => handleUserMessage(reply)}
-                      className="bg-white border border-gray-300 hover:border-emerald-300 hover:bg-emerald-50 text-gray-700 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 shadow-sm hover:shadow"
+                      className="bg-white border-2 border-gray-300 hover:border-emerald-400 hover:bg-emerald-50 text-gray-700 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       {reply}
                     </button>
@@ -612,12 +951,12 @@ useEffect(() => {
                 </motion.div>
               )}
 
-              {/* Category Selection */}
+              {/* ✅ Category Selection - HIDE when in document-answer mode */}
               {currentStep === 'category' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200"
+                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-md"
                 >
                   <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
                     <Building className="w-4 h-4 text-emerald-500" />
@@ -648,7 +987,7 @@ useEffect(() => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200"
+                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-md"
                 >
                   <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-emerald-500" />
@@ -675,7 +1014,7 @@ useEffect(() => {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-3"
                 >
-                  <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl p-3 text-white">
+                  <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl p-3 text-white shadow-lg">
                     <h3 className="font-bold text-sm mb-1">🎉 Found {filteredResults.length} Results</h3>
                     <p className="text-emerald-100 text-xs">
                       {selectedCategory} suppliers in {selectedDistrict}
@@ -721,24 +1060,34 @@ useEffect(() => {
               )}
 
               {/* Loading Indicator */}
-              {loading && (
+              {(loading || isAnsweringQuestion) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="flex justify-start"
                 >
                   <div className="flex gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
-                      <Bot className="w-3 h-3 text-white" />
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md ${
+                      isAnsweringQuestion 
+                        ? 'bg-gradient-to-br from-purple-500 to-pink-600'
+                        : 'bg-gradient-to-br from-emerald-500 to-green-600'
+                    }`}>
+                      {isAnsweringQuestion ? (
+                        <FileText className="w-3.5 h-3.5 text-white" />
+                      ) : (
+                        <Bot className="w-3.5 h-3.5 text-white" />
+                      )}
                     </div>
-                    <div className="bg-white rounded-lg rounded-bl-none p-2 border border-gray-200 shadow-sm">
+                    <div className="bg-white rounded-2xl rounded-bl-sm p-3 border border-gray-200 shadow-md">
                       <div className="flex items-center gap-2 text-gray-600">
                         <div className="flex space-x-1">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
-                        <span className="text-xs">Searching for the best options...</span>
+                        <span className="text-xs font-medium">
+                          {isAnsweringQuestion ? 'Analyzing documents...' : 'Searching...'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -749,8 +1098,8 @@ useEffect(() => {
             </div>
           </section>
 
-          {/* Input Area - Fixed at bottom with better visibility */}
-          <div className="border-t border-gray-200 bg-white/95 backdrop-blur-lg p-3">
+          {/* ✅ ENHANCED Input Area - Visible text color */}
+          <div className="border-t border-gray-200 bg-white/95 backdrop-blur-lg p-3 shadow-lg">
             <div className="max-w-4xl mx-auto">
               <div className="flex gap-2">
                 <input
@@ -758,15 +1107,21 @@ useEffect(() => {
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleUserMessage(userInput)}
-                  placeholder="Type your message... (e.g., 'I need TMT steel in Ernakulam')"
-                  className="flex-1 px-3 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm text-gray-900 placeholder-gray-500"
-                  style={{ fontSize: '14px', fontWeight: '400' }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleUserMessage(userInput);
+                    }
+                  }}
+                  placeholder="Ask about suppliers or construction documents..."
+                  className="flex-1 px-4 py-3 bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm text-gray-900 placeholder-gray-400 font-medium shadow-sm"
+                  disabled={loading || isAnsweringQuestion}
+                  style={{ color: '#111827' }}
                 />
                 <button
                   onClick={() => handleUserMessage(userInput)}
-                  disabled={!userInput.trim()}
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:scale-100 disabled:shadow-none flex items-center gap-1 text-sm"
+                  disabled={!userInput.trim() || loading || isAnsweringQuestion}
+                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:scale-100 disabled:shadow-none flex items-center gap-2 text-sm"
                 >
                   <Send className="w-4 h-4" />
                   <span className="hidden sm:inline">Send</span>
@@ -777,17 +1132,24 @@ useEffect(() => {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <button
                   onClick={resetChat}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1"
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
                 >
                   <RefreshCcw className="w-3 h-3" />
                   Reset
                 </button>
                 <button
                   onClick={() => handleUserMessage('help')}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
                 >
                   <Search className="w-3 h-3" />
                   Help
+                </button>
+                <button
+                  onClick={() => handleUserMessage('show resources')}
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
+                >
+                  <FileText className="w-3 h-3" />
+                  Documents ({resources.length})
                 </button>
               </div>
             </div>
