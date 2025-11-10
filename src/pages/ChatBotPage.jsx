@@ -754,7 +754,7 @@ const ChatBotPageAdvanced = () => {
           </div>
 
           {/* Resources Section */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm text-gray-800 flex gap-2 items-center">
                 <FileText className="w-4 h-4 text-emerald-500" />
@@ -837,7 +837,7 @@ const ChatBotPageAdvanced = () => {
                 </div>
               </>
             )}
-          </div>
+          </div> */}
 
           <button
             onClick={resetChat}
