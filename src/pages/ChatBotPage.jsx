@@ -231,7 +231,7 @@ const ChatBotPageAdvanced = () => {
     "Find TMT steel",
     "Need cement suppliers",
     "What are the safety guidelines?",
-    "Tell me about construction codes",
+    // "Tell me about construction codes",
     "Show resources"
   ];
 

@@ -12,11 +12,13 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Badge } from '../components/ui/badge';
 import { fetchBusinessesWithCache } from '../lib/GoogleSheetService';
 
+
 const getSafeStarCount = (rating) => {
   if (!rating) return 0;
   const parsed = parseFloat(rating);
   return isNaN(parsed) ? 0 : Math.min(5, Math.max(0, Math.round(parsed)));
 };
+
 
 const categories = [
   {
@@ -70,11 +72,13 @@ const categories = [
   }
 ];
 
+
 const districts = [
   'All Districts', 'Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha',
   'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram',
   'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'
 ];
+
 
 const sortOptions = [
   { value: 'name', label: 'Name A-Z', icon: '🔤' },
@@ -83,12 +87,14 @@ const sortOptions = [
   { value: 'rating_count', label: 'Most Reviewed', icon: '📝' },
 ];
 
+
 const formatPhoneNumber = (phone) => {
   if (!phone) return null;
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
   return phone;
 };
+
 
 const SearchPage = () => {
   const navigate = useNavigate();
@@ -102,9 +108,11 @@ const SearchPage = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [viewMode, setViewMode] = useState('grid');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filterChips, setFilterChips] = useState([]);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+
 
   const getCategoryCount = (categoryLabel) => {
     const categoryObj = categories.find(cat => cat.label === categoryLabel);
@@ -117,7 +125,9 @@ const SearchPage = () => {
     }).length;
   };
 
+
   const getSelectedCategoryObj = () => categories.find(cat => cat.label === selectedCategory);
+
 
   const getCategoryColor = (category) => {
     const categoryLower = (category || '').toLowerCase();
@@ -129,6 +139,7 @@ const SearchPage = () => {
     if (categoryLower.includes('contractor') || categoryLower.includes('construction')) return 'from-purple-500 to-pink-500';
     return 'from-emerald-500 to-green-500';
   };
+
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -160,8 +171,10 @@ const SearchPage = () => {
     loadBusinesses();
   }, []);
 
+
   const filteredAndSortedBusinesses = useMemo(() => {
     let filtered = [...businesses];
+
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -203,6 +216,7 @@ const SearchPage = () => {
       }
     }
 
+
     filtered.sort((a, b) => {
       let aVal = (a[sortField] || '').toString().toLowerCase();
       let bVal = (b[sortField] || '').toString().toLowerCase();
@@ -216,8 +230,10 @@ const SearchPage = () => {
       return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
     });
 
+
     return filtered;
   }, [businesses, searchTerm, selectedCategory, selectedSubcategory, selectedDistrict, ratingFilter, verifiedOnly, sortField, sortOrder]);
+
 
   useEffect(() => {
     const chips = [];
@@ -229,6 +245,7 @@ const SearchPage = () => {
     setFilterChips(chips);
   }, [selectedCategory, selectedSubcategory, selectedDistrict, ratingFilter, verifiedOnly]);
 
+
   const removeChip = (chipType) => {
     switch (chipType) {
       case 'category': setSelectedCategory('all'); break;
@@ -239,6 +256,7 @@ const SearchPage = () => {
       default: break;
     }
   };
+
 
   const StarRating = ({ rating, count }) => {
     const stars = getSafeStarCount(rating);
@@ -257,12 +275,19 @@ const SearchPage = () => {
     );
   };
 
+
   const ProfessionalCard = ({ business, index }) => {
     const color = getCategoryColor(business.category);
     const isVerified = business.gst_number && business.gst_number.trim() !== '';
     const formattedPhone = formatPhoneNumber(business.phone);
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: index * 0.03 }} className="h-full group">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        exit={{ opacity: 0, y: -20 }} 
+        transition={{ delay: index * 0.03 }} 
+        className="h-full group"
+      >
         <div className="relative h-full rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
           <div className={`h-1.5 bg-gradient-to-r ${color}`}></div>
           <div className="p-4 sm:p-6 relative">
@@ -274,13 +299,13 @@ const SearchPage = () => {
               )}
             </div>
             <div className="mb-3">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-emerald-600 transition-colors mb-1">{business.name}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-emerald-600 transition-colors mb-1 pr-8">{business.name}</h3>
               <div className="flex flex-wrap gap-2 mb-2">
                 <motion.div whileHover={{ scale: 1.05 }}>
-                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-sm`}>{business.category}</Badge>
+                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-xs sm:text-sm px-2 py-1`}>{business.category}</Badge>
                 </motion.div>
                 {business.subcategory && business.subcategory !== business.category && (
-                  <Badge variant="outline" className="text-xs bg-gray-50">{business.subcategory}</Badge>
+                  <Badge variant="outline" className="text-xs bg-gray-50 px-2 py-1">{business.subcategory}</Badge>
                 )}
               </div>
               {business.rating && <StarRating rating={business.rating} count={business.rating_count} />}
@@ -299,7 +324,11 @@ const SearchPage = () => {
               {formattedPhone && (
                 <motion.div className="flex items-center gap-3" whileHover={{ x: 4 }}>
                   <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <a href={`tel:${business.phone.replace(/\D/g, '')}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium truncate hover:underline" title={business.phone}>
+                  <a 
+                    href={`tel:${business.phone.replace(/\D/g, '')}`} 
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium truncate hover:underline" 
+                    title={business.phone}
+                  >
                     {formattedPhone}
                   </a>
                 </motion.div>
@@ -307,7 +336,11 @@ const SearchPage = () => {
               {business.email && (
                 <motion.div className="flex items-center gap-3" whileHover={{ x: 4 }}>
                   <Mail className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  <a href={`mailto:${business.email}`} className="text-sm text-red-600 hover:text-red-700 font-medium truncate hover:underline" title={business.email}>
+                  <a 
+                    href={`mailto:${business.email}`} 
+                    className="text-sm text-red-600 hover:text-red-700 font-medium truncate hover:underline" 
+                    title={business.email}
+                  >
                     {business.email}
                   </a>
                 </motion.div>
@@ -315,7 +348,12 @@ const SearchPage = () => {
               {business.website && (
                 <motion.div className="flex items-center gap-3" whileHover={{ x: 4 }}>
                   <Globe className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                  <a href={business.website.startsWith('http') ? business.website : `https://${business.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 hover:text-purple-700 font-medium truncate hover:underline flex items-center gap-1">
+                  <a 
+                    href={business.website.startsWith('http') ? business.website : `https://${business.website}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-sm text-purple-600 hover:text-purple-700 font-medium truncate hover:underline flex items-center gap-1"
+                  >
                     Website
                     <ExternalLink className="w-3 h-3" />
                   </a>
@@ -325,13 +363,23 @@ const SearchPage = () => {
             <div className="space-y-2 pt-2 border-t">
               <div className="flex gap-2 flex-wrap">
                 {business.map_location && (
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.map_location, '_blank')} className="flex-1 min-w-[120px] px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }} 
+                    onClick={() => window.open(business.map_location, '_blank')} 
+                    className="flex-1 min-w-[100px] px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
                     <Map className="w-4 h-4" />
-                    Map
+                    <span className="hidden xs:inline">Map</span>
                   </motion.button>
                 )}
                 {business.website && (
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="flex-1 min-w-[120px] px-3 py-2 border-2 border-emerald-500 text-emerald-600 rounded-lg font-medium text-sm hover:bg-emerald-50 transition-all">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }} 
+                    onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} 
+                    className="flex-1 min-w-[100px] px-3 py-2 border-2 border-emerald-500 text-emerald-600 rounded-lg font-medium text-sm hover:bg-emerald-50 transition-all"
+                  >
                     Visit
                   </motion.button>
                 )}
@@ -343,58 +391,87 @@ const SearchPage = () => {
     );
   };
 
+
   const CompactListCard = ({ business, index }) => {
     const color = getCategoryColor(business.category);
     const isVerified = business.gst_number && business.gst_number.trim() !== '';
     const formattedPhone = formatPhoneNumber(business.phone);
 
+
     return (
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ delay: index * 0.02 }}>
         <div className="bg-white rounded-xl border-l-4 border-emerald-500 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden mb-3 hover:-translate-y-0.5">
-          <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              <div className="sm:col-span-3">
+          <div className="p-3 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+              {/* Name & Category - Mobile: Full width, Desktop: 3 cols */}
+              <div className="lg:col-span-3">
                 <h3 className="font-bold text-gray-900 line-clamp-1 mb-1 text-base sm:text-lg">{business.name}</h3>
-                <div className="flex items-center gap-2">
-                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-xs sm:text-sm`}>{business.category}</Badge>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className={`bg-gradient-to-r ${color} text-white border-0 text-xs px-2 py-0.5`}>{business.category}</Badge>
                   {isVerified && <CheckCircle className="w-4 h-4 text-green-500" />}
                 </div>
               </div>
-              <div className="sm:col-span-2">
+
+              {/* Location & Rating - Mobile: Full width, Desktop: 2 cols */}
+              <div className="lg:col-span-2">
                 <div className="flex items-center gap-1 mb-1">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">{business.district}</span>
+                  <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700 truncate">{business.district}</span>
                 </div>
                 {business.rating && (
                   <div className="flex items-center gap-1">
                     {[...Array(getSafeStarCount(business.rating))].map((_, i) => (
                       <Star key={i} size={14} className="fill-yellow-400 text-yellow-400" />
                     ))}
+                    <span className="text-xs text-gray-600 ml-1">({business.rating})</span>
                   </div>
                 )}
               </div>
-              <div className="sm:col-span-3">
+
+              {/* Contact Info - Mobile: Full width, Desktop: 3 cols */}
+              <div className="lg:col-span-3 space-y-1">
                 {formattedPhone && (
-                  <a href={`tel:${business.phone.replace(/\D/g, '')}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-1 truncate" title={business.phone}>
-                    <Phone className="w-3 h-3" /> {formattedPhone}
+                  <a 
+                    href={`tel:${business.phone.replace(/\D/g, '')}`} 
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 truncate" 
+                    title={business.phone}
+                  >
+                    <Phone className="w-3 h-3 flex-shrink-0" /> 
+                    <span className="truncate">{formattedPhone}</span>
                   </a>
                 )}
                 {business.email && (
-                  <a href={`mailto:${business.email}`} className="text-sm text-red-600 hover:underline truncate flex items-center gap-1" title={business.email}>
-                    <Mail className="w-3 h-3" /> {business.email}
+                  <a 
+                    href={`mailto:${business.email}`} 
+                    className="text-sm text-red-600 hover:underline truncate flex items-center gap-1" 
+                    title={business.email}
+                  >
+                    <Mail className="w-3 h-3 flex-shrink-0" /> 
+                    <span className="truncate">{business.email}</span>
                   </a>
                 )}
               </div>
-              <div className="sm:col-span-4 flex gap-2 flex-wrap">
+
+              {/* Actions - Mobile: Full width, Desktop: 4 cols */}
+              <div className="lg:col-span-4 flex gap-2 flex-wrap">
                 {business.map_location && (
-                  <motion.button whileHover={{ scale: 1.05 }} onClick={() => window.open(business.map_location, '_blank')} className="px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-1">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    onClick={() => window.open(business.map_location, '_blank')} 
+                    className="flex-1 min-w-[80px] px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1"
+                  >
                     <Map className="w-4 h-4" />
-                    Map
+                    <span className="hidden sm:inline">Map</span>
                   </motion.button>
                 )}
                 {business.website && (
-                  <motion.button whileHover={{ scale: 1.05 }} onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} className="px-3 py-1.5 text-sm border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1 truncate">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    onClick={() => window.open(business.website.startsWith('http') ? business.website : `https://${business.website}`, '_blank')} 
+                    className="flex-1 min-w-[80px] px-3 py-1.5 text-sm border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors flex items-center justify-center gap-1"
+                  >
                     <Globe className="w-4 h-4" />
+                    <span className="hidden sm:inline">Visit</span>
                   </motion.button>
                 )}
               </div>
@@ -405,22 +482,24 @@ const SearchPage = () => {
     );
   };
 
+
   const SelectedCategoryShowcase = () => {
     const categoryObj = getSelectedCategoryObj();
     if (!categoryObj) return null;
+
 
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className={`bg-gradient-to-r ${categoryObj.color} rounded-2xl p-6 sm:p-8 mb-8 text-white shadow-xl`}
+        className={`bg-gradient-to-r ${categoryObj.color} rounded-2xl p-4 sm:p-8 mb-6 sm:mb-8 text-white shadow-xl`}
       >
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between mb-4 sm:mb-6">
           <div>
-            <div className="text-4xl sm:text-5xl mb-3">{categoryObj.icon}</div>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">{categoryObj.label}</h2>
-            <p className="text-white/90 text-base sm:text-lg">{categoryObj.description}</p>
+            <div className="text-3xl sm:text-5xl mb-2 sm:mb-3">{categoryObj.icon}</div>
+            <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2">{categoryObj.label}</h2>
+            <p className="text-white/90 text-sm sm:text-lg">{categoryObj.description}</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -428,19 +507,19 @@ const SearchPage = () => {
               setSelectedCategory('all');
               setSelectedSubcategory('all');
             }}
-            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2 sm:p-3 rounded-full transition-all"
+            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2 rounded-full transition-all flex-shrink-0"
             aria-label="Clear category filter"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <X className="w-5 h-5" />
           </motion.button>
         </div>
         <div>
-          <label className="text-sm sm:text-base font-semibold opacity-90 mb-3 block">Filter by type:</label>
+          <label className="text-sm font-semibold opacity-90 mb-2 sm:mb-3 block">Filter by type:</label>
           <div className="flex flex-wrap gap-2">
             <motion.button
               whileHover={{ scale: 1.05 }}
               onClick={() => setSelectedSubcategory('all')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium transition-all text-sm sm:text-base ${
+              className={`px-3 py-1.5 rounded-full font-medium transition-all text-sm ${
                 selectedSubcategory === 'all'
                   ? 'bg-white text-gray-900 shadow-lg'
                   : 'bg-white/20 text-white hover:bg-white/30'
@@ -453,7 +532,7 @@ const SearchPage = () => {
                 key={subcat}
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setSelectedSubcategory(subcat)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium transition-all text-sm sm:text-base ${
+                className={`px-3 py-1.5 rounded-full font-medium transition-all text-sm ${
                   selectedSubcategory === subcat
                     ? 'bg-white text-gray-900 shadow-lg'
                     : 'bg-white/20 text-white hover:bg-white/30'
@@ -468,8 +547,10 @@ const SearchPage = () => {
     );
   };
 
+
   const CategoryCard = ({ category, index }) => {
     const count = getCategoryCount(category.label);
+
 
     return (
       <motion.button
@@ -487,20 +568,193 @@ const SearchPage = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-white transform group-hover:scale-110 transition-transform duration-300"></div>
           </div>
           <div className="relative z-10">
-            <div className="text-4xl sm:text-5xl mb-3">{category.icon}</div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2">{category.label}</h3>
-            <p className="text-sm sm:text-base opacity-90 mb-4 line-clamp-2">{category.description}</p>
+            <div className="text-3xl sm:text-5xl mb-2 sm:mb-3">{category.icon}</div>
+            <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2">{category.label}</h3>
+            <p className="text-xs sm:text-base opacity-90 mb-3 sm:mb-4 line-clamp-2">{category.description}</p>
             <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
+              <span className="text-xs sm:text-sm font-semibold bg-white/20 px-2 sm:px-3 py-1 rounded-full">
                 {count} providers
               </span>
-              <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform" />
             </div>
           </div>
         </div>
       </motion.button>
     );
   };
+
+
+  // Mobile Filter Modal
+  const MobileFilterModal = () => (
+    <AnimatePresence>
+      {showMobileFilters && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMobileFilters(false)}
+            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 max-h-[85vh] overflow-y-auto lg:hidden"
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b px-4 py-4 flex items-center justify-between rounded-t-3xl">
+              <h3 className="text-lg font-bold text-gray-900">Filters</h3>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Close filters"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Content */}
+            <div className="p-4 space-y-4">
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={(value) => {
+                    setSelectedCategory(value);
+                    setSelectedSubcategory('all');
+                  }}
+                >
+                  <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel>{group.icon} {group.label}</SelectLabel>
+                        {group.subcategories.map((cat) => (
+                          <SelectItem key={cat} value={group.label}>{cat}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* District Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">District</label>
+                <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
+                  <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                    <SelectValue placeholder="Select District" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {districts.map((dist) => (
+                      <SelectItem key={dist} value={dist === 'All Districts' ? 'all' : dist}>
+                        📍 {dist}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
+                <Select value={sortField} onValueChange={setSortField}>
+                  <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.icon} {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort Order */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Sort Order</label>
+                <button
+                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  className="w-full h-12 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {sortOrder === 'asc' ? <SortAsc className="h-5 w-5" /> : <SortDesc className="h-5 w-5" />}
+                  {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                </button>
+              </div>
+
+              {/* Rating Filter */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
+                <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                  <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
+                    <SelectValue placeholder="All Ratings" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Ratings</SelectItem>
+                    <SelectItem value="3">⭐ 3+</SelectItem>
+                    <SelectItem value="4">⭐⭐ 4+</SelectItem>
+                    <SelectItem value="4.5">⭐⭐⭐ 4.5+</SelectItem>
+                    <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* GST Verified Toggle */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Verification</label>
+                <button
+                  onClick={() => setVerifiedOnly(!verifiedOnly)}
+                  className={`w-full h-12 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
+                    verifiedOnly
+                      ? 'bg-green-500 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
+                  }`}
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  GST Verified Only
+                </button>
+              </div>
+
+              {/* Reset & Apply Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setSelectedSubcategory('all');
+                    setSelectedDistrict('all');
+                    setRatingFilter('all');
+                    setVerifiedOnly(false);
+                  }}
+                  className="h-12 px-4 bg-gray-200 text-gray-800 rounded-xl font-medium hover:bg-gray-300 transition-all"
+                >
+                  Reset All
+                </button>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="h-12 px-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl font-medium hover:shadow-lg transition-all"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+
 
   return (
     <>
@@ -510,32 +764,33 @@ const SearchPage = () => {
       </Helmet>
       <div className="min-h-screen pb-20 bg-gradient-to-br from-gray-50 via-white to-emerald-50">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-8 px-4 sm:py-10 sm:px-6 sticky top-0 z-40 shadow-2xl">
+        <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-6 sm:py-10 px-4 sm:px-6 sticky top-0 z-40 shadow-2xl">
           <div className="max-w-7xl mx-auto">
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
-              className="text-white hover:bg-white/20 mb-3 sm:mb-4 group"
+              className="text-white hover:bg-white/20 mb-2 sm:mb-4 group"
             >
               <motion.div whileHover={{ x: -4 }} className="flex items-center gap-2 text-sm sm:text-base">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to Home
               </motion.div>
             </Button>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-1 sm:mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-100 to-white">
+            <h1 className="text-xl sm:text-4xl md:text-5xl font-extrabold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-100 to-white">
               Professional Directory
             </h1>
-            <p className="text-emerald-100 text-sm sm:text-lg">Discover industry-leading service providers across Kerala</p>
+            <p className="text-emerald-100 text-xs sm:text-lg">Discover industry-leading service providers across Kerala</p>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Category Grid */}
           {selectedCategory === 'all' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-10 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Browse by Category</h2>
-              <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">Select a category to explore businesses</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-6 sm:mb-12">
+              <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-1">Browse by Category</h2>
+              <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-8">Select a category to explore businesses</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {categories.map((category, index) => (
                   <CategoryCard key={category.label} category={category} index={index} />
                 ))}
@@ -543,28 +798,35 @@ const SearchPage = () => {
             </motion.div>
           )}
 
+
           {/* Selected Category Showcase */}
           <AnimatePresence>
             {selectedCategory !== 'all' && <SelectedCategoryShowcase />}
           </AnimatePresence>
 
+
           {/* Search & Filter Section */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 shadow-xl border border-white/40">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-6 sm:mb-8 shadow-xl border border-white/40"
+          >
             {/* Search Bar */}
-            <div className="mb-5 sm:mb-6">
-              <motion.div whileHover={{ scale: 1.02 }} className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600 h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="mb-4 sm:mb-6">
+              <motion.div whileHover={{ scale: 1.01 }} className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600 h-4 w-4 sm:h-5 sm:w-5 z-10" />
                 <Input
                   placeholder="Search by name, category, location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10 sm:h-14 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-xl text-sm sm:text-lg"
+                  className="pl-10 h-12 sm:h-14 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-xl text-sm sm:text-lg"
                 />
               </motion.div>
             </div>
 
-            {/* Filter Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+
+            {/* Desktop Filters - Hidden on mobile */}
+            <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <Select
                 value={selectedCategory}
                 onValueChange={(value) => {
@@ -572,7 +834,7 @@ const SearchPage = () => {
                   setSelectedSubcategory('all');
                 }}
               >
-                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
+                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -588,8 +850,9 @@ const SearchPage = () => {
                 </SelectContent>
               </Select>
 
+
               <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
-                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
+                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
                   <SelectValue placeholder="District" />
                 </SelectTrigger>
                 <SelectContent>
@@ -601,8 +864,9 @@ const SearchPage = () => {
                 </SelectContent>
               </Select>
 
+
               <Select value={sortField} onValueChange={setSortField}>
-                <SelectTrigger className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl font-medium text-sm sm:text-base">
+                <SelectTrigger className="h-12 border-2 border-emerald-200 rounded-xl font-medium">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -614,11 +878,12 @@ const SearchPage = () => {
                 </SelectContent>
               </Select>
 
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                className="h-10 sm:h-12 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="h-12 border-2 border-emerald-200 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 aria-label="Toggle sort order"
               >
                 {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
@@ -626,90 +891,125 @@ const SearchPage = () => {
               </motion.button>
             </div>
 
-            {/* Advanced Filters */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="flex items-center gap-2 text-emerald-600 font-semibold mb-3 sm:mb-4 hover:text-emerald-700 text-sm sm:text-base"
-              aria-expanded={showAdvancedFilters}
-              aria-controls="advanced-filters"
-            >
-              <Filter className="w-4 h-4" />
-              Advanced Filters
-              <motion.div animate={{ rotate: showAdvancedFilters ? 180 : 0 }}>
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
-            </motion.button>
 
-            <AnimatePresence>
-              {showAdvancedFilters && (
-                <motion.div
-                  id="advanced-filters"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-6 pt-6 border-t-2 border-emerald-100"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
-                      <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                        <SelectTrigger className="border-2 border-emerald-200 rounded-lg text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Ratings</SelectItem>
-                          <SelectItem value="3">⭐ 3+</SelectItem>
-                          <SelectItem value="4">⭐⭐ 4+</SelectItem>
-                          <SelectItem value="4.5">⭐⭐⭐ 4.5+</SelectItem>
-                          <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Verification</label>
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => setVerifiedOnly(!verifiedOnly)}
-                        className={`w-full px-3 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 text-sm ${
-                          verifiedOnly
-                            ? 'bg-green-500 text-white shadow-lg'
-                            : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
-                        }`}
-                        aria-pressed={verifiedOnly}
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        GST Verified Only
-                      </motion.button>
-                    </div>
-                    <div className="flex items-end">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => {
-                          setSearchTerm('');
-                          setSelectedCategory('all');
-                          setSelectedSubcategory('all');
-                          setSelectedDistrict('all');
-                          setRatingFilter('all');
-                          setVerifiedOnly(false);
-                        }}
-                        className="w-full px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-all text-sm"
-                      >
-                        Reset All
-                      </motion.button>
-                    </div>
-                  </div>
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden mb-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowMobileFilters(true)}
+                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Filter className="w-5 h-5" />
+                Show Filters
+                {filterChips.length > 0 && (
+                  <span className="bg-white text-emerald-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                    {filterChips.length}
+                  </span>
+                )}
+              </motion.button>
+            </div>
+
+
+            {/* Advanced Filters - Desktop only */}
+            <div className="hidden lg:block">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-2 text-emerald-600 font-semibold mb-4 hover:text-emerald-700"
+                aria-expanded={showAdvancedFilters}
+              >
+                <Filter className="w-4 h-4" />
+                Advanced Filters
+                <motion.div animate={{ rotate: showAdvancedFilters ? 180 : 0 }}>
+                  <ChevronDown className="w-4 h-4" />
                 </motion.div>
-              )}
-            </AnimatePresence>
+              </motion.button>
+
+
+              <AnimatePresence>
+                {showAdvancedFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-6 pt-6 border-t-2 border-emerald-100"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Rating</label>
+                        <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                          <SelectTrigger className="border-2 border-emerald-200 rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Ratings</SelectItem>
+                            <SelectItem value="3">⭐ 3+</SelectItem>
+                            <SelectItem value="4">⭐⭐ 4+</SelectItem>
+                            <SelectItem value="4.5">⭐⭐⭐ 4.5+</SelectItem>
+                            <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Verification</label>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          onClick={() => setVerifiedOnly(!verifiedOnly)}
+                          className={`w-full px-3 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                            verifiedOnly
+                              ? 'bg-green-500 text-white shadow-lg'
+                              : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
+                          }`}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          GST Verified Only
+                        </motion.button>
+                      </div>
+                      <div className="flex items-end">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedCategory('all');
+                            setSelectedSubcategory('all');
+                            setSelectedDistrict('all');
+                            setRatingFilter('all');
+                            setVerifiedOnly(false);
+                          }}
+                          className="w-full px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-all"
+                        >
+                          Reset All
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
 
             {/* Filter Chips */}
             {filterChips.length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap md:flex-nowrap gap-2 mb-4 pb-4 border-b overflow-x-auto">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="flex flex-wrap gap-2 mb-4 pb-4 border-b"
+              >
                 {filterChips.map((chip, idx) => (
-                  <motion.div key={idx} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 whitespace-nowrap">
+                  <motion.div 
+                    key={idx} 
+                    initial={{ scale: 0 }} 
+                    animate={{ scale: 1 }} 
+                    exit={{ scale: 0 }} 
+                    className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap"
+                  >
                     {chip.value}
-                    <button onClick={() => removeChip(chip.type)} className="hover:bg-emerald-200 p-0.5 rounded-full" aria-label={`Remove filter ${chip.value}`}>
+                    <button 
+                      onClick={() => removeChip(chip.type)} 
+                      className="hover:bg-emerald-200 p-0.5 rounded-full" 
+                      aria-label={`Remove filter ${chip.value}`}
+                    >
                       <X className="w-3 h-3" />
                     </button>
                   </motion.div>
@@ -717,12 +1017,14 @@ const SearchPage = () => {
               </motion.div>
             )}
 
+
             {/* Controls */}
-            <div className="flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between flex-wrap gap-3 text-xs sm:text-sm text-gray-600">
               <div>
-                Showing <span className="font-bold text-emerald-600 text-lg">{filteredAndSortedBusinesses.length}</span> of{' '}
-                <span className="font-bold text-gray-900 text-lg">{businesses.length}</span> businesses
+                Showing <span className="font-bold text-emerald-600 text-base sm:text-lg">{filteredAndSortedBusinesses.length}</span> of{' '}
+                <span className="font-bold text-gray-900 text-base sm:text-lg">{businesses.length}</span> businesses
               </div>
+
 
               <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
                 {[
@@ -734,36 +1036,45 @@ const SearchPage = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setViewMode(mode)}
-                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md font-medium transition-all flex items-center gap-2 text-sm ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-md font-medium transition-all flex items-center gap-1 sm:gap-2 ${
                       viewMode === mode ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-600 hover:text-gray-900'
                     }`}
                     aria-pressed={viewMode === mode}
-                    aria-label={`Switch to ${label} view`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{label}</span>
+                    <span className="hidden sm:inline text-sm">{label}</span>
                   </motion.button>
                 ))}
               </div>
             </div>
           </motion.div>
 
+
           {/* Results */}
           {loading ? (
-            <div className="text-center py-20 sm:py-32">
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full mx-auto mb-4 sm:mb-6" />
-              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading directory...</p>
+            <div className="text-center py-16 sm:py-32">
+              <motion.div 
+                animate={{ rotate: 360 }} 
+                transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} 
+                className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full mx-auto mb-4"
+              />
+              <p className="text-gray-600 text-sm sm:text-lg font-medium">Loading directory...</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">
               {filteredAndSortedBusinesses.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-20 sm:py-32">
-                  <Search className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-gray-300 mb-4 sm:mb-6" />
-                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-600 mb-2">No results found</h3>
-                  <p className="text-gray-500 text-base sm:text-lg">Try adjusting your filters</p>
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  className="text-center py-16 sm:py-32"
+                >
+                  <Search className="w-16 h-16 sm:w-24 sm:h-24 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-xl sm:text-3xl font-bold text-gray-600 mb-2">No results found</h3>
+                  <p className="text-gray-500 text-sm sm:text-lg">Try adjusting your filters</p>
                 </motion.div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {filteredAndSortedBusinesses.map((business, index) => (
                     <ProfessionalCard key={business.id || index} business={business} index={index} />
                   ))}
@@ -778,9 +1089,14 @@ const SearchPage = () => {
             </AnimatePresence>
           )}
         </div>
+
+
+        {/* Mobile Filter Modal */}
+        <MobileFilterModal />
       </div>
     </>
   );
 };
+
 
 export default SearchPage;

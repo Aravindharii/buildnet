@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import Header from '@/components/Header';
 import ShoppingCart from '@/components/ShoppingCart';
+import { useDriveResourcesInit } from './hooks/useDriveResourcesInit';
+
 
 // Lazy load all pages for better performance
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -47,6 +49,8 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+    useDriveResourcesInit();
+
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   return (

@@ -3,6 +3,54 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // ============================================
+// Cache management
+// ============================================
+let cachedResources = null;
+let cacheTimestamp = null;
+let initializationPromise = null;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// ============================================
+// Initialization: Preload resources on app start
+// ============================================
+export const initializeDriveResources = async () => {
+  // Return existing promise if already initializing
+  if (initializationPromise) {
+    console.log('[GoogleDriveService] ⏳ Already initializing, waiting...');
+    return initializationPromise;
+  }
+  
+  console.log('[GoogleDriveService] 🚀 Starting initialization...');
+  
+  initializationPromise = (async () => {
+    try {
+      const resources = await fetchDriveResources();
+      
+      if (resources && resources.length > 0) {
+        cachedResources = resources;
+        cacheTimestamp = Date.now();
+        console.log(`[GoogleDriveService] ✅ Initialization complete: ${resources.length} files cached`);
+      } else {
+        console.warn('[GoogleDriveService] ⚠️ Initialization returned no resources');
+      }
+      
+      return resources;
+    } catch (error) {
+      console.error('[GoogleDriveService] ❌ Initialization failed:', error);
+      initializationPromise = null; // Allow retry
+      throw error;
+    }
+  })();
+  
+  return initializationPromise;
+};
+
+// Check if resources are already loaded
+export const isInitialized = () => {
+  return cachedResources !== null && cachedResources.length > 0;
+};
+
+// ============================================
 // FUNCTION 1: Fetch all drive resources
 // ============================================
 export const fetchDriveResources = async () => {
@@ -57,6 +105,38 @@ export const fetchDriveResources = async () => {
     
     return [];
   }
+};
+
+// ============================================
+// Fetch with cache support
+// ============================================
+export const fetchDriveResourcesWithCache = async () => {
+  const now = Date.now();
+  
+  if (cachedResources && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
+    console.log('[GoogleDriveService] ♻️ Using cached resources');
+    return cachedResources;
+  }
+  
+  console.log('[GoogleDriveService] 🔄 Cache expired or empty, fetching fresh data');
+  const resources = await fetchDriveResources();
+  
+  if (resources && resources.length > 0) {
+    cachedResources = resources;
+    cacheTimestamp = now;
+    console.log(`[GoogleDriveService] ✅ Cached ${resources.length} resources`);
+  } else {
+    console.warn('[GoogleDriveService] ⚠️ No resources to cache');
+  }
+  
+  return resources;
+};
+
+export const clearResourceCache = () => {
+  console.log('[GoogleDriveService] 🗑️ Clearing cache');
+  cachedResources = null;
+  cacheTimestamp = null;
+  initializationPromise = null;
 };
 
 // ============================================
@@ -163,41 +243,6 @@ export const askAllFilesQuestion = async (question) => {
     console.error('[GoogleDriveService] ❌ Error:', error.message);
     throw error;
   }
-};
-
-// ============================================
-// Cache management
-// ============================================
-let cachedResources = null;
-let cacheTimestamp = null;
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-
-export const fetchDriveResourcesWithCache = async () => {
-  const now = Date.now();
-  
-  if (cachedResources && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
-    console.log('[GoogleDriveService] ♻️ Using cached resources');
-    return cachedResources;
-  }
-  
-  console.log('[GoogleDriveService] 🔄 Cache expired or empty, fetching fresh data');
-  const resources = await fetchDriveResources();
-  
-  if (resources && resources.length > 0) {
-    cachedResources = resources;
-    cacheTimestamp = now;
-    console.log(`[GoogleDriveService] ✅ Cached ${resources.length} resources`);
-  } else {
-    console.warn('[GoogleDriveService] ⚠️ No resources to cache');
-  }
-  
-  return resources;
-};
-
-export const clearResourceCache = () => {
-  console.log('[GoogleDriveService] 🗑️ Clearing cache');
-  cachedResources = null;
-  cacheTimestamp = null;
 };
 
 // ============================================
