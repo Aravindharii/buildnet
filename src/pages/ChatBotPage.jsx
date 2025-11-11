@@ -120,7 +120,7 @@ const formatPhoneNumber = (phone) => {
   return phone;
 };
 
-// ✅ NEW: Function to clean markdown formatting from text
+// Function to clean markdown formatting from text
 const cleanMarkdownFormatting = (text) => {
   if (!text) return '';
   
@@ -133,7 +133,7 @@ const cleanMarkdownFormatting = (text) => {
   return cleaned;
 };
 
-// ✅ NEW: Enhanced text renderer with proper formatting
+// Enhanced text renderer with proper formatting
 const FormattedText = ({ text, className = '' }) => {
   if (!text) return null;
   
@@ -231,14 +231,8 @@ const ChatBotPageAdvanced = () => {
     "Find TMT steel",
     "Need cement suppliers",
     "What are the safety guidelines?",
-    // "Tell me about construction codes",
     "Show resources"
   ];
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, filteredResults]);
 
   // Load businesses from Google Sheets
   useEffect(() => {
@@ -377,16 +371,14 @@ const ChatBotPageAdvanced = () => {
     setCurrentStep('district');
     setShowQuickReplies(false);
     
-    setTimeout(() => {
-      const botMsg = {
-        id: Date.now() + 1,
-        text: generateAIResponse({ categorySelected: true, category: category.label }),
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'text'
-      };
-      setMessages(prev => [...prev, botMsg]);
-    }, 800);
+    const botMsg = {
+      id: Date.now() + 1,
+      text: generateAIResponse({ categorySelected: true, category: category.label }),
+      sender: 'bot',
+      timestamp: new Date(),
+      type: 'text'
+    };
+    setMessages(prev => [...prev, botMsg]);
   };
 
   // Handle district selection
@@ -403,48 +395,44 @@ const ChatBotPageAdvanced = () => {
     
     setMessages(prev => [...prev, userMsg]);
     setSelectedDistrict(district);
-    setLoading(true);
     setCurrentStep('results');
     
-    setTimeout(() => {
-      const results = filterBusinesses(selectedCategory, district);
-      setFilteredResults(results);
-      
-      let botResponse = '';
-      let context = {};
-      
-      if (results.length > 0) {
-        botResponse = generateAIResponse({
-          searchResults: true,
-          count: results.length,
-          category: selectedCategory,
-          district: district
-        });
-        context.searchResults = true;
-      } else {
-        botResponse = generateAIResponse({
-          noResults: true,
-          category: selectedCategory,
-          district: district
-        });
-        context.noResults = true;
-      }
-      
-      const botMsg = {
-        id: Date.now() + 1,
-        text: botResponse,
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'text',
-        context
-      };
-      
-      setMessages(prev => [...prev, botMsg]);
-      setLoading(false);
-    }, 1500);
+    const results = filterBusinesses(selectedCategory, district);
+    setFilteredResults(results);
+    
+    let botResponse = '';
+    let context = {};
+    
+    if (results.length > 0) {
+      botResponse = generateAIResponse({
+        searchResults: true,
+        count: results.length,
+        category: selectedCategory,
+        district: district
+      });
+      context.searchResults = true;
+    } else {
+      botResponse = generateAIResponse({
+        noResults: true,
+        category: selectedCategory,
+        district: district
+      });
+      context.noResults = true;
+    }
+    
+    const botMsg = {
+      id: Date.now() + 1,
+      text: botResponse,
+      sender: 'bot',
+      timestamp: new Date(),
+      type: 'text',
+      context
+    };
+    
+    setMessages(prev => [...prev, botMsg]);
   };
 
-  // ✅ ENHANCED: Handle user messages with document Q&A
+  // Handle user messages with document Q&A
   const handleUserMessage = async (message) => {
     if (!message.trim()) return;
     
@@ -464,16 +452,11 @@ const ChatBotPageAdvanced = () => {
     
     const messageLower = message.toLowerCase();
     
-    // ✅ ENHANCED: Broader document question detection
+    // Document question detection
     const documentKeywords = [
-      // Explicit document references
       'document', 'pdf', 'file', 'paper', 'report',
-      
-      // Question words (usually indicate seeking information)
       'what is', 'what are', 'tell me about', 'explain', 'describe',
       'how to', 'how do', 'why', 'when', 'where',
-      
-      // Construction-specific terms
       'guideline', 'specification', 'standard', 'code', 'regulation',
       'safety', 'procedure', 'method', 'requirement', 'material',
       'quality', 'construction', 'building', 'design', 'plan',
@@ -482,32 +465,24 @@ const ChatBotPageAdvanced = () => {
       'arrangement', 'system', 'installation', 'compliance'
     ];
     
-    // Check if message contains any document keyword
     const isDocumentQuestion = documentKeywords.some(keyword => 
       messageLower.includes(keyword)
     );
     
-    // OR if message ends with question mark
     const isQuestion = message.trim().endsWith('?') || message.trim().endsWith('.');
     
-    // Combine conditions
     const shouldSearchDocuments = (isDocumentQuestion || isQuestion) && resources.length > 0;
     
     console.log('[ChatBot] 🔍 Document question detected:', shouldSearchDocuments);
-    console.log('[ChatBot] 📚 Available resources:', resources.length);
     
-    // ✅ HANDLE DOCUMENT QUESTIONS
+    // HANDLE DOCUMENT QUESTIONS
     if (shouldSearchDocuments) {
       console.log('[ChatBot] 📄 Processing as document question');
       setIsAnsweringQuestion(true);
-      setLoading(true);
-      
-      // ✅ Hide category/district selection when answering from documents
       setCurrentStep('document-answer');
       
       try {
-        // Show thinking message
-        const thinkingMsg = {
+          const thinkingMsg = {
           id: Date.now() + 1,
           text: '🤔 Searching through construction documents...',
           sender: 'bot',
@@ -515,21 +490,14 @@ const ChatBotPageAdvanced = () => {
           type: 'thinking'
         };
         setMessages(prev => [...prev, thinkingMsg]);
-        
         console.log('[ChatBot] 📡 Calling askAllFilesQuestion API...');
         
-        // Ask the question across all documents
         const result = await askAllFilesQuestion(message);
         
         console.log('[ChatBot] ✅ Received answer from API:', result);
         
-        // Remove thinking message
-        setMessages(prev => prev.filter(m => m.id !== thinkingMsg.id));
-        
-        // ✅ Clean the answer text before displaying
         const cleanedAnswer = cleanMarkdownFormatting(result.answer);
         
-        // Add answer
         const answerMsg = {
           id: Date.now() + 2,
           text: cleanedAnswer,
@@ -545,9 +513,6 @@ const ChatBotPageAdvanced = () => {
       } catch (error) {
         console.error('[ChatBot] ❌ Error answering question:', error);
         
-        // Remove thinking message
-        setMessages(prev => prev.filter(m => m.type !== 'thinking'));
-        
         const errorMsg = {
           id: Date.now() + 3,
           text: `Sorry, I encountered an error while searching the documents: ${error.message}\n\nPlease try again or rephrase your question.`,
@@ -558,55 +523,51 @@ const ChatBotPageAdvanced = () => {
         
         setMessages(prev => [...prev, errorMsg]);
       } finally {
-        setLoading(false);
         setIsAnsweringQuestion(false);
       }
-      return; // Exit early, don't process other intents
+      return;
     }
     
-    // HANDLE OTHER INTENTS (existing logic)
-    setTimeout(() => {
-      let botResponse = '';
+    // HANDLE OTHER INTENTS
+    let botResponse = '';
+    
+    if (messageLower.match(/\b(hi|hello|hey|greetings)\b/)) {
+      console.log('[ChatBot] 👋 Greeting detected');
+      botResponse = aiResponses.greeting[Math.floor(Math.random() * aiResponses.greeting.length)];
+      setCurrentStep('category');
+    } else if (messageLower.match(/\b(help|what can you do|how to use)\b/)) {
+      console.log('[ChatBot] ❓ Help requested');
+      botResponse = aiResponses.help;
+      setCurrentStep('category');
+    } else if (messageLower.includes('resource') || messageLower.includes('show files') || messageLower.includes('documents')) {
+      console.log('[ChatBot] 📚 Resources requested');
+      botResponse = generateAIResponse({ resources: true, count: resources.length });
+      setCurrentStep('category');
+    } else {
+      const matchedCategory = categories.find(cat => 
+        cat.keywords.some(keyword => messageLower.includes(keyword))
+      );
       
-      if (messageLower.match(/\b(hi|hello|hey|greetings)\b/)) {
-        console.log('[ChatBot] 👋 Greeting detected');
-        botResponse = aiResponses.greeting[Math.floor(Math.random() * aiResponses.greeting.length)];
-        setCurrentStep('category');
-      } else if (messageLower.match(/\b(help|what can you do|how to use)\b/)) {
-        console.log('[ChatBot] ❓ Help requested');
-        botResponse = aiResponses.help;
-        setCurrentStep('category');
-      } else if (messageLower.includes('resource') || messageLower.includes('show files') || messageLower.includes('documents')) {
-        console.log('[ChatBot] 📚 Resources requested');
-        botResponse = generateAIResponse({ resources: true, count: resources.length });
-        setCurrentStep('category');
+      if (matchedCategory) {
+        console.log(`[ChatBot] 🎯 Category matched: ${matchedCategory.label}`);
+        handleCategorySelect(matchedCategory);
+        return;
       } else {
-        // Try to match with categories (for supplier search)
-        const matchedCategory = categories.find(cat => 
-          cat.keywords.some(keyword => messageLower.includes(keyword))
-        );
-        
-        if (matchedCategory) {
-          console.log(`[ChatBot] 🎯 Category matched: ${matchedCategory.label}`);
-          handleCategorySelect(matchedCategory);
-          return;
-        } else {
-          console.log('[ChatBot] 🔄 Default response');
-          botResponse = "I understand you're looking for construction resources. Let me show you the main categories, or ask me about the construction documents!";
-          setCurrentStep('category');
-        }
+        console.log('[ChatBot] 🔄 Default response');
+        botResponse = "I understand you're looking for construction resources. Let me show you the main categories, or ask me about the construction documents!";
+        setCurrentStep('category');
       }
-      
-      const botMsg = {
-        id: Date.now() + 1,
-        text: botResponse,
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'text'
-      };
-      
-      setMessages(prev => [...prev, botMsg]);
-    }, 1000);
+    }
+    
+    const botMsg = {
+      id: Date.now() + 1,
+      text: botResponse,
+      sender: 'bot',
+      timestamp: new Date(),
+      type: 'text'
+    };
+    
+    setMessages(prev => [...prev, botMsg]);
   };
 
   // Business Card Component
@@ -721,7 +682,7 @@ const ChatBotPageAdvanced = () => {
         <meta name="description" content="AI-powered construction assistant for Kerala. Find suppliers, answer questions from documents." />
       </Helmet>
       
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-hidden">
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Sidebar */}
         <motion.div
           initial={{ opacity: 0, x: -60 }}
@@ -753,92 +714,6 @@ const ChatBotPageAdvanced = () => {
             </div>
           </div>
 
-          {/* Resources Section */}
-          {/* <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold text-sm text-gray-800 flex gap-2 items-center">
-                <FileText className="w-4 h-4 text-emerald-500" />
-                Construction Documents
-              </div>
-              {resourcesLoading && (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="text-emerald-500"
-                >
-                  <RefreshCcw className="w-4 h-4" />
-                </motion.div>
-              )}
-            </div>
-
-            {!resourcesLoading && resources.length === 0 && (
-              <div className="text-xs text-gray-400 p-2 bg-gray-50 rounded">
-                No documents found
-              </div>
-            )}
-
-            {!resourcesLoading && resources.length > 0 && (
-              <>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 mb-2">
-                  <div className="flex items-center gap-1 text-purple-700 text-xs">
-                    <Sparkles className="w-3 h-3" />
-                    <span className="font-medium">Ask me about these docs!</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                  {resources.map((file, index) => (
-                    <motion.div
-                      key={file.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group"
-                    >
-                      <div className="bg-white rounded-lg p-2 border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all duration-200">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-shrink-0 mt-0.5">
-                            <FileText className={`w-4 h-4 ${file.mimeType === 'application/pdf' ? 'text-red-500' : 'text-blue-500'}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-gray-900 truncate" title={file.name}>
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {file.type || (file.mimeType === 'application/pdf' ? 'PDF' : 'DOCX')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-1 mt-2">
-                          <a
-                            href={file.viewLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded text-xs font-medium transition-colors duration-200 flex items-center justify-center gap-1"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            View
-                          </a>
-                          {file.downloadLink && (
-                            <a
-                              href={file.downloadLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-1 px-2 rounded text-xs font-medium transition-colors duration-200 flex items-center justify-center gap-1"
-                            >
-                              <Download className="w-3 h-3" />
-                              Download
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div> */}
-
           <button
             onClick={resetChat}
             className="mt-auto bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white py-2.5 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm"
@@ -848,10 +723,10 @@ const ChatBotPageAdvanced = () => {
           </button>
         </motion.div>
 
-        {/* Main Chat Area */}
-        <main className="flex-1 flex flex-col min-w-0">
-          {/* Mobile Header */}
-          <div className="lg:hidden bg-white/90 backdrop-blur-lg border-b border-gray-200/60 p-3">
+        {/* Main Chat Area - FIXED HEIGHT STRUCTURE */}
+        <main className="flex-1 flex flex-col h-screen overflow-hidden">
+          {/* Mobile Header - Fixed at top */}
+          <div className="lg:hidden bg-white/90 backdrop-blur-lg border-b border-gray-200/60 p-3 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
@@ -868,8 +743,8 @@ const ChatBotPageAdvanced = () => {
             </div>
           </div>
 
-          {/* Chat Messages Area */}
-          <section className="flex-1 p-3 overflow-y-auto">
+          {/* Chat Messages Area - Scrollable middle section */}
+          <section className="flex-1 overflow-y-auto p-3 md:p-4" style={{ minHeight: 0 }}>
             <div className="max-w-4xl mx-auto space-y-3">
               {/* Messages */}
               <AnimatePresence>
@@ -896,13 +771,11 @@ const ChatBotPageAdvanced = () => {
                       )}
                     </div>
 
-                    <div className={`max-w-[85%] rounded-2xl p-3.5 shadow-md ${
+                    <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-3.5 shadow-md ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-sm'
                         : message.type === 'document-answer'
                         ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 text-gray-900 rounded-bl-sm border-2 border-purple-300'
-                        : message.type === 'thinking'
-                        ? 'bg-gray-100 text-gray-700 rounded-bl-sm border border-gray-300'
                         : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                     }`}>
                       {message.type === 'document-answer' ? (
@@ -951,7 +824,7 @@ const ChatBotPageAdvanced = () => {
                 </motion.div>
               )}
 
-              {/* ✅ Category Selection - HIDE when in document-answer mode */}
+              {/* Category Selection */}
               {currentStep === 'category' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -1027,7 +900,7 @@ const ChatBotPageAdvanced = () => {
                         key={business.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
+                        transition={{ delay: index * 0.05 }}
                       >
                         <BusinessCard business={business} />
                       </motion.div>
@@ -1059,47 +932,12 @@ const ChatBotPageAdvanced = () => {
                 </motion.div>
               )}
 
-              {/* Loading Indicator */}
-              {(loading || isAnsweringQuestion) && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="flex gap-2">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md ${
-                      isAnsweringQuestion 
-                        ? 'bg-gradient-to-br from-purple-500 to-pink-600'
-                        : 'bg-gradient-to-br from-emerald-500 to-green-600'
-                    }`}>
-                      {isAnsweringQuestion ? (
-                        <FileText className="w-3.5 h-3.5 text-white" />
-                      ) : (
-                        <Bot className="w-3.5 h-3.5 text-white" />
-                      )}
-                    </div>
-                    <div className="bg-white rounded-2xl rounded-bl-sm p-3 border border-gray-200 shadow-md">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        </div>
-                        <span className="text-xs font-medium">
-                          {isAnsweringQuestion ? 'Analyzing documents...' : 'Searching...'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
               <div ref={messagesEndRef} />
             </div>
           </section>
 
-          {/* ✅ ENHANCED Input Area - Visible text color */}
-          <div className="border-t border-gray-200 bg-white/95 backdrop-blur-lg p-3 shadow-lg">
+          {/* Input Area - ALWAYS VISIBLE at bottom */}
+          <div className="border-t border-gray-200 bg-white/95 backdrop-blur-lg p-3 md:p-4 shadow-lg flex-shrink-0">
             <div className="max-w-4xl mx-auto">
               <div className="flex gap-2">
                 <input
@@ -1114,14 +952,14 @@ const ChatBotPageAdvanced = () => {
                     }
                   }}
                   placeholder="Ask about suppliers or construction documents..."
-                  className="flex-1 px-4 py-3 bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm text-gray-900 placeholder-gray-400 font-medium shadow-sm"
-                  disabled={loading || isAnsweringQuestion}
+                  className="flex-1 px-3 md:px-4 py-2.5 md:py-3 bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm text-gray-900 placeholder-gray-400 font-medium shadow-sm"
+                  disabled={isAnsweringQuestion}
                   style={{ color: '#111827' }}
                 />
                 <button
                   onClick={() => handleUserMessage(userInput)}
-                  disabled={!userInput.trim() || loading || isAnsweringQuestion}
-                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:scale-100 disabled:shadow-none flex items-center gap-2 text-sm"
+                  disabled={!userInput.trim() || isAnsweringQuestion}
+                  className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 md:px-5 py-2.5 md:py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:scale-100 disabled:shadow-none flex items-center gap-2 text-sm"
                 >
                   <Send className="w-4 h-4" />
                   <span className="hidden sm:inline">Send</span>
@@ -1132,25 +970,18 @@ const ChatBotPageAdvanced = () => {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <button
                   onClick={resetChat}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
                 >
                   <RefreshCcw className="w-3 h-3" />
                   Reset
                 </button>
                 <button
                   onClick={() => handleUserMessage('help')}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
                 >
                   <Search className="w-3 h-3" />
                   Help
                 </button>
-                {/* <button
-                  onClick={() => handleUserMessage('show resources')}
-                  className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1 shadow-sm"
-                >
-                  <FileText className="w-3 h-3" />
-                  Documents ({resources.length})
-                </button> */}
               </div>
             </div>
           </div>
