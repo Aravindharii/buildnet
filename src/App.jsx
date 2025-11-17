@@ -1,14 +1,17 @@
+// App.jsx - Simplified routing
+
 import React, { useState, Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useAuth } from '@/contexts/FirebaseAuthContext.jsx';
 import Header from '@/components/Header';
 import ShoppingCart from '@/components/ShoppingCart';
 import { useDriveResourcesInit } from './hooks/useDriveResourcesInit';
+import { FirebaseAuthProvider } from './contexts/FirebaseAuthContext.jsx';
+import { CartProvider } from './hooks/useCart.jsx';
 
-
-// Lazy load all pages for better performance
+// Lazy load pages
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
 const RFQPage = lazy(() => import('@/pages/RFQPage'));
@@ -20,8 +23,8 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const StorePage = lazy(() => import('@/pages/StorePage'));
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
 const SuccessPage = lazy(() => import('@/pages/SuccessPage'));
+const CompleteProfilePage = lazy(() => import('@/pages/CompleteProfilePage'));
 
-// Loading component with animation
 const LoadingFallback = () => (
   <div className="flex justify-center items-center min-h-screen bg-gray-900">
     <motion.div
@@ -32,7 +35,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Protected Route Component
+// Simple Protected Route - only checks authentication
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -49,8 +52,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-    useDriveResourcesInit();
-
+  useDriveResourcesInit();
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   return (
@@ -63,44 +65,55 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/assistant" element={<ChatBotPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/store" element={<StorePage />} />
-            <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/success" element={<SuccessPage />} />
-            
-            {/* Protected Routes */}
-            <Route 
-              path="/admin" 
+
+            {/* Protected Routes - All require authentication */}
+            <Route
+              path="/complete-profile"
               element={
                 <ProtectedRoute>
-                  <AdminPage />
+                  <CompleteProfilePage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/dashboard" 
+
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/rfq" 
+
+            <Route
+              path="/rfq"
               element={
                 <ProtectedRoute>
                   <RFQPage />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            {/* Catch-all route - 404 fallback */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>
-      
+
       <ShoppingCart isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
     </div>
   );
@@ -108,15 +121,19 @@ function App() {
 
 function AppWrapper() {
   return (
-    <Router>
-      <Helmet>
-        <title>Buildnet AI</title>
-        <meta name="description" content="Kerala's premier construction industry directory. Find contractors, suppliers, architects, engineers, and equipment providers across Kerala." />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#10b981" />
-      </Helmet>
-      <App />
-    </Router>
+    <FirebaseAuthProvider>
+      <CartProvider>
+        <Router basename="/">
+          <Helmet>
+            <title>Buildnet AI</title>
+            <meta name="description" content="Kerala's premier construction industry directory. Find contractors, suppliers, architects, engineers, and equipment providers across Kerala." />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta name="theme-color" content="#10b981" />
+          </Helmet>
+          <App />
+        </Router>
+      </CartProvider>
+    </FirebaseAuthProvider>
   );
 }
 

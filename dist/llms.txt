@@ -2,9 +2,9 @@
 - [- BuildNet](/account): Access your BuildNet account or create a new one.
 - [- BuildNetAI Store](/productdetail): No description available
 - [Admin Dashboard - Manage Content](/admin): Admin dashboard to manage businesses, sites, and AI knowledge base.
+- [AI Construction Assistant | Kerala Construction](/chatbot): AI-powered construction assistant for Kerala. Find suppliers, answer questions from documents.
 - [AI Interface - Kerala Construction](/aiinterface): Interact with our AI Assistant or start a chat on WhatsApp.
 - [My Dashboard - BuildNet](/dashboard): Manage your BuildNet profile, RFQs, and purchase orders.
 - [Payment Successful! - BuildNetAI Store](/success): Your order has been successfully placed.
 - [Request for Quotation - BuildNet](/rfq): Send project requirements to multiple construction professionals at once.
-- [Search Directory - BuildNet AI](/search): Search and find construction professionals across Kerala by category and location.
 - [Store - BuildNetAI](/store): Browse and purchase amazing products from our online store.

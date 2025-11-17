@@ -1,37 +1,103 @@
-// lib/GoogleSheetService.js
+// lib/GoogleSheetAuthService.js - COMPLETE FILE WITH OPTION 2
 
 const SHEET_ID = '1ExVzzxjR7tJnpcK49OX5jCups_Akyabwp7qeMALt1Ss';
 const GID = '1096958955';
+
+export const isAuthorizedEmail = async (email) => {
+  if (!email) {
+    console.log('❌ No email provided');
+    return { isAuthorized: false, businessData: null };
+  }
+  
+  console.log('🔍 Checking authorization for:', email);
+  
+  try {
+    const businesses = await fetchBusinessesWithCache();
+    
+    // Filter only businesses with emails for authentication
+    const businessesWithEmail = businesses.filter(b => b.email && b.email.trim());
+    
+    console.log('📊 Total businesses loaded:', businesses.length);
+    console.log('🔐 Businesses with emails:', businessesWithEmail.length);
+    console.log('📋 Sample emails:', businessesWithEmail.slice(0, 5).map(b => b.email));
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    const authorizedBusiness = businessesWithEmail.find(
+      business => business.email?.toLowerCase().trim() === normalizedEmail
+    );
+    
+    if (authorizedBusiness) {
+      console.log('✅ Found authorized business:', authorizedBusiness.name);
+    } else {
+      console.log('❌ Email not found in directory');
+    }
+    
+    return {
+      isAuthorized: !!authorizedBusiness,
+      businessData: authorizedBusiness || null
+    };
+  } catch (error) {
+    console.error('❌ Error checking email authorization:', error);
+    return { isAuthorized: false, businessData: null };
+  }
+};
+
+export const getBusinessByEmail = async (email) => {
+  if (!email) return null;
+  
+  const businesses = await fetchBusinessesWithCache();
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  return businesses.find(
+    business => business.email?.toLowerCase().trim() === normalizedEmail
+  ) || null;
+};
 
 export const fetchBusinessesFromGoogleSheets = async () => {
   try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
     
+    console.log('🌐 Fetching from:', csvUrl);
+    
     const response = await fetch(csvUrl);
     
+    console.log('📡 Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch Google Sheets data');
+      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
     }
     
     const csvText = await response.text();
+    
+    console.log('📄 CSV length:', csvText.length, 'characters');
+    
     const businesses = parseCSV(csvText);
     
-    console.log('Fetched businesses:', businesses); // Debug log
+    console.log('✅ Successfully parsed', businesses.length, 'businesses');
+    
     return businesses;
   } catch (error) {
-    console.error('Error fetching from Google Sheets:', error);
+    console.error('❌ Error fetching from Google Sheets:', error);
     return [];
   }
 };
 
 const parseCSV = (csvText) => {
   const lines = csvText.split('\n').filter(line => line.trim());
-  if (lines.length === 0) return [];
+  
+  if (lines.length === 0) {
+    console.warn('⚠️ No lines found in CSV');
+    return [];
+  }
   
   const headers = parseCSVLine(lines[0]);
-  console.log('CSV Headers:', headers); // Debug log
+  console.log('📋 CSV Headers:', headers);
+  console.log('📊 Total lines (including header):', lines.length);
   
   const businesses = [];
+  let noNameCount = 0;
+  let noEmailCount = 0;
   
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
@@ -44,62 +110,78 @@ const parseCSV = (csvText) => {
         rawBusiness[header] = values[index] || '';
       });
       
-      // Map the Google Sheets columns to your expected format
       const business = mapBusinessFields(rawBusiness);
       
-      // Only add if it has at least a name
+      // Only require name (email optional)
       if (business.name && business.name.trim()) {
         businesses.push(business);
+        
+        if (!business.email || !business.email.trim()) {
+          noEmailCount++;
+        }
+      } else {
+        noNameCount++;
       }
     }
   }
   
-  console.log('Parsed businesses:', businesses.length); // Debug log
+  const withEmail = businesses.filter(b => b.email && b.email.trim()).length;
+  
+  console.log('\n📊 Parsing Summary:');
+  console.log(`  ✅ Total businesses: ${businesses.length}`);
+  console.log(`  🔐 With email (can login): ${withEmail}`);
+  console.log(`  ⚠️  Without email: ${noEmailCount}`);
+  console.log(`  ❌ Missing name: ${noNameCount}`);
+  
   return businesses;
 };
 
-// Map Google Sheets field names to your application's field names
 const mapBusinessFields = (rawBusiness) => {
+  const getField = (possibleNames) => {
+    for (const name of possibleNames) {
+      if (rawBusiness[name]) return rawBusiness[name];
+    }
+    return '';
+  };
+
   return {
-    id: rawBusiness['unique_id'] || rawBusiness['BuildNET ID'] || generateId(),
+    id: getField(['unique_id', 'BuildNET ID']) || generateId(),
     created_at: new Date().toISOString(),
-    name: rawBusiness['Name'] || '',
-    category: rawBusiness['Category'] || rawBusiness['Sub Category'] || '',
-    subcategory: rawBusiness['Sub Category'] || '',
-    district: rawBusiness['District'] || '',
-    state: rawBusiness['State'] || 'Kerala',
-    phone: cleanPhoneNumber(rawBusiness['phone_number'] || ''),
-    email: rawBusiness['Email Id'] || '',
-    website: rawBusiness['Website'] || '',
-    address: rawBusiness['Address'] || rawBusiness['Location'] || '',
-    area: rawBusiness['Area'] || '',
-    pincode: rawBusiness['Pin Code'] || '',
-    map_location: rawBusiness['Map Link'] || '',
-    gst_number: rawBusiness['gst_number'] || '',
-    rating: rawBusiness['Review'] || '',
-    rating_count: rawBusiness['Rating Count'] || '',
-    tags: rawBusiness['TAGS'] || '',
-    products: rawBusiness['PRODUCTS'] || '',
-    photo: rawBusiness['Photo'] || '',
-    plus_code: rawBusiness['PlusCode'] || '',
-    latitude: rawBusiness['latitude'] || '',
-    longitude: rawBusiness['longitude'] || '',
-    instagram: rawBusiness['Instagram Profile'] || '',
-    facebook: rawBusiness['Facebook Profile'] || '',
-    linkedin: rawBusiness['Linkedin Profile'] || '',
-    twitter: rawBusiness['Twitter Profile'] || '',
-    images_folder: rawBusiness['Images Folder'] || '',
-    association_badges: rawBusiness['association_badges'] || '',
+    name: getField(['Name']),
+    category: getField(['Category', 'Sub Category']),
+    subcategory: getField(['Sub Category']),
+    district: getField(['District']),
+    state: getField(['State']) || 'Kerala',
+    phone: cleanPhoneNumber(getField(['phone_number', 'Phone'])),
+    email: getField(['Email Id', 'Email']),
+    website: getField(['Website']),
+    address: getField(['Address', 'Location']),
+    area: getField(['Area']),
+    pincode: getField(['Pin Code']),
+    map_location: getField(['Map Link']),
+    gst_number: getField(['gst_number', 'GST Number']),
+    rating: getField(['Review']),
+    rating_count: getField(['Rating Count']),
+    tags: getField(['TAGS']),
+    products: getField(['PRODUCTS', 'PRODUCTS ']),
+    photo: getField(['Photo']),
+    plus_code: getField(['PlusCode']),
+    latitude: getField(['latitude']),
+    longitude: getField(['longitude']),
+    instagram: getField(['Instagram Profile']),
+    facebook: getField(['Facebook Profile']),
+    linkedin: getField(['Linkedin Profile']),
+    twitter: getField(['Twitter Profile']),
+    images_folder: getField(['Images Folder']),
+    association_badges: getField(['association_badges']),
   };
 };
 
-// Clean phone numbers (remove extra spaces)
 const cleanPhoneNumber = (phone) => {
   if (!phone) return '';
   return phone.replace(/\s+/g, ' ').trim();
 };
 
-// Generate a simple ID if not provided
 const generateId = () => {
   return `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
@@ -115,15 +197,12 @@ const parseCSVLine = (line) => {
     
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
-        // Handle escaped quotes ("")
         current += '"';
-        i++; // Skip next quote
+        i++;
       } else {
-        // Toggle quote state
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      // End of field
       values.push(current.trim());
       current = '';
     } else {
@@ -131,26 +210,23 @@ const parseCSVLine = (line) => {
     }
   }
   
-  // Push the last field
   values.push(current.trim());
-  
   return values.map(v => v.replace(/^"(.*)"$/, '$1').trim());
 };
 
-// Cache management
 let cachedData = null;
 let cacheTimestamp = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
 export const fetchBusinessesWithCache = async () => {
   const now = Date.now();
   
   if (cachedData && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
-    console.log('Using cached data');
+    console.log('📦 Using cached Google Sheets data');
     return cachedData;
   }
   
-  console.log('Fetching fresh data from Google Sheets');
+  console.log('🔄 Fetching fresh data from Google Sheets');
   const data = await fetchBusinessesFromGoogleSheets();
   cachedData = data;
   cacheTimestamp = now;
@@ -158,8 +234,8 @@ export const fetchBusinessesWithCache = async () => {
   return data;
 };
 
-// Clear cache manually if needed
 export const clearCache = () => {
   cachedData = null;
   cacheTimestamp = null;
+  console.log('🗑️ Cache cleared');
 };
