@@ -25,7 +25,7 @@ const Header = ({
         <div className="relative flex items-center justify-between h-20">
           <div className="flex-1 flex items-center justify-start">
             <Link to="/" className="flex-shrink-0 flex items-center gap-2">
-              <img className="h-10 w-auto" src="/logo.jpeg" alt="BuildNet logo" />
+              <img className="h-10 w-auto" src="logo.jpeg" alt="BuildNet logo" />
               <span className="text-2xl font-bold text-white">BuildNet AI</span>
             </Link>
           </div>

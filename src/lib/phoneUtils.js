@@ -1,6 +1,7 @@
 /**
  * Phone Number Matching Utilities for BuildNet
- * Handles various Indian phone number formats with spaces
+ * Handles various Indian phone number formats with STRICT EXACT MATCHING
+ * Fixed version - NO fuzzy matching
  */
 
 /**
@@ -34,66 +35,35 @@ export const formatPhoneDisplay = (phone) => {
 };
 
 /**
- * Compares two phone numbers for similarity
- * Handles ALL format variations by normalizing to digits only
+ * Compares two phone numbers for EXACT match only
+ * NO fuzzy matching - numbers must be identical after normalization
  * @param {string} phone1 - First phone number
  * @param {string} phone2 - Second phone number
- * @param {number} minMatchDigits - Minimum number of trailing digits to match (default: 10)
- * @returns {boolean} - True if phones match
+ * @returns {boolean} - True if phones match exactly
  */
-export const phonesMatch = (phone1, phone2, minMatchDigits = 10) => {
+export const phonesMatch = (phone1, phone2) => {
   const normalized1 = normalizePhone(phone1);
   const normalized2 = normalizePhone(phone2);
   
+  // Both must exist and have valid length
   if (!normalized1 || !normalized2) return false;
+  
+  // Must be valid phone number length (10 or 11 digits for Indian numbers)
+  if (normalized1.length < 10 || normalized2.length < 10) return false;
+  if (normalized1.length > 11 || normalized2.length > 11) return false;
   
   console.log(`🔍 Comparing: "${normalized1}" (from "${phone1}") vs "${normalized2}" (from "${phone2}")`);
   
-  // Exact match after normalization
-  if (normalized1 === normalized2) {
+  // ONLY exact match after normalization
+  const isMatch = normalized1 === normalized2;
+  
+  if (isMatch) {
     console.log('✅ Exact match found');
-    return true;
+  } else {
+    console.log('❌ No exact match');
   }
   
-  const len1 = normalized1.length;
-  const len2 = normalized2.length;
-  
-  // Compare last N digits (handles different length numbers)
-  if (len1 >= minMatchDigits && len2 >= minMatchDigits) {
-    const last1 = normalized1.slice(-minMatchDigits);
-    const last2 = normalized2.slice(-minMatchDigits);
-    
-    if (last1 === last2) {
-      console.log(`✅ Last ${minMatchDigits} digits match: ${last1}`);
-      return true;
-    }
-  }
-  
-  // For shorter numbers (like 10 digits), try matching last 8-10 digits
-  if (len1 >= 8 && len2 >= 8) {
-    for (let i = 10; i >= 8; i--) {
-      const last1 = normalized1.slice(-i);
-      const last2 = normalized2.slice(-i);
-      if (last1 === last2) {
-        console.log(`✅ Last ${i} digits match: ${last1}`);
-        return true;
-      }
-    }
-  }
-  
-  // If one is contained in the other
-  if (len1 < len2) {
-    const match = normalized2.includes(normalized1) || normalized2.endsWith(normalized1);
-    if (match) console.log('✅ Phone1 contained in phone2');
-    return match;
-  } else if (len2 < len1) {
-    const match = normalized1.includes(normalized2) || normalized1.endsWith(normalized2);
-    if (match) console.log('✅ Phone2 contained in phone1');
-    return match;
-  }
-  
-  console.log('❌ No match found');
-  return false;
+  return isMatch;
 };
 
 /**
@@ -110,6 +80,13 @@ export const findPhoneMatch = (searchPhone, records, phoneField = 'phone') => {
   }
   
   const normalizedSearch = normalizePhone(searchPhone);
+  
+  // Validate search phone length
+  if (normalizedSearch.length < 10 || normalizedSearch.length > 11) {
+    console.log(`❌ Invalid phone number length: ${normalizedSearch.length} digits`);
+    return null;
+  }
+  
   console.log(`\n🔍 === PHONE SEARCH STARTED ===`);
   console.log(`🔍 Searching for: "${normalizedSearch}" (original: "${searchPhone}")`);
   console.log(`📊 Total records to search: ${records.length}\n`);
@@ -130,11 +107,18 @@ export const findPhoneMatch = (searchPhone, records, phoneField = 'phone') => {
       || record.Contact;
     
     if (recordPhone) {
+      const normalizedRecord = normalizePhone(recordPhone);
+      
+      // Skip if record phone is invalid length
+      if (normalizedRecord.length < 10 || normalizedRecord.length > 11) {
+        continue;
+      }
+      
       matchCount++;
       
       // Log first few comparisons for debugging
       if (matchCount <= 5) {
-        console.log(`Checking record ${i + 1}: "${recordPhone}"`);
+        console.log(`Checking record ${i + 1}: "${recordPhone}" -> "${normalizedRecord}"`);
       }
       
       if (phonesMatch(searchPhone, recordPhone)) {
@@ -142,7 +126,7 @@ export const findPhoneMatch = (searchPhone, records, phoneField = 'phone') => {
         console.log(`📍 Record Index: ${i + 1}`);
         console.log(`🏢 Business: ${record.name || record.business_name || 'Unknown'}`);
         console.log(`📞 Matched Phone: "${recordPhone}"`);
-        console.log(`📞 Normalized: "${normalizePhone(recordPhone)}"`);
+        console.log(`📞 Normalized: "${normalizedRecord}"`);
         console.log(`✅ ========================\n`);
         return record;
       }
@@ -150,7 +134,7 @@ export const findPhoneMatch = (searchPhone, records, phoneField = 'phone') => {
   }
   
   console.log(`\n❌ === SEARCH COMPLETED ===`);
-  console.log(`❌ No match found after checking ${matchCount} phone numbers`);
+  console.log(`❌ No match found after checking ${matchCount} valid phone numbers`);
   console.log(`❌ ======================\n`);
   return null;
 };
@@ -158,12 +142,11 @@ export const findPhoneMatch = (searchPhone, records, phoneField = 'phone') => {
 /**
  * Validates if a phone number is in valid format
  * @param {string} phone - Phone number to validate
- * @param {number} expectedLength - Expected length (default: 10)
  * @returns {boolean} - True if valid
  */
-export const isValidPhone = (phone, expectedLength = 10) => {
+export const isValidPhone = (phone) => {
   const normalized = normalizePhone(phone);
-  return normalized.length === expectedLength || normalized.length === expectedLength + 1; // Allow 10 or 11 digits
+  return normalized.length === 10 || normalized.length === 11;
 };
 
 /**
@@ -171,22 +154,41 @@ export const isValidPhone = (phone, expectedLength = 10) => {
  */
 export const testPhoneMatching = () => {
   const testCases = [
-    { input: '0984706836', sheet: '098470 68369', shouldMatch: true },
-    { input: '09847 06836', sheet: '098470 68369', shouldMatch: true },
+    // These SHOULD match (same number, different formatting)
+    { input: '09847068369', sheet: '098470 68369', shouldMatch: true },
+    { input: '09847 06836 9', sheet: '09847068369', shouldMatch: true },
     { input: '0484 234 4343', sheet: '04842344343', shouldMatch: true },
-    { input: '9847068369', sheet: '098470 68369', shouldMatch: true },
-    { input: '1234567890', sheet: '098470 68369', shouldMatch: false }
+    { input: '9847068369', sheet: '9847068369', shouldMatch: true },
+    
+    // These should NOT match (different numbers)
+    { input: '9847068369', sheet: '098470 68369', shouldMatch: false }, // 10 vs 11 digits
+    { input: '9847068369', sheet: '89847068369', shouldMatch: false }, // Different prefix
+    { input: '9847068369', sheet: '9847068368', shouldMatch: false }, // Last digit different
+    { input: '1234567890', sheet: '098470 68369', shouldMatch: false }, // Completely different
+    { input: '9995475379', sheet: '5', shouldMatch: false }, // Invalid short number
   ];
   
-  console.log('\n🧪 === PHONE MATCHING TESTS ===\n');
+  console.log('\n🧪 === EXACT PHONE MATCHING TESTS ===\n');
+  
+  let passed = 0;
+  let failed = 0;
   
   testCases.forEach((test, index) => {
     const result = phonesMatch(test.input, test.sheet);
     const status = result === test.shouldMatch ? '✅ PASS' : '❌ FAIL';
+    
+    if (result === test.shouldMatch) {
+      passed++;
+    } else {
+      failed++;
+    }
+    
     console.log(`Test ${index + 1}: ${status}`);
     console.log(`  Input: "${test.input}" vs Sheet: "${test.sheet}"`);
     console.log(`  Expected: ${test.shouldMatch}, Got: ${result}\n`);
   });
   
-  console.log('🧪 === TESTS COMPLETED ===\n');
+  console.log('🧪 === TESTS COMPLETED ===');
+  console.log(`✅ Passed: ${passed}/${testCases.length}`);
+  console.log(`❌ Failed: ${failed}/${testCases.length}\n`);
 };
