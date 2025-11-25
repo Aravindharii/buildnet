@@ -1,17 +1,16 @@
-// App.jsx - Simplified routing
-
+// App.jsx - Complete and Fixed
 import React, { useState, Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/FirebaseAuthContext.jsx';
+import { useAuth } from '@/contexts/FirebaseAuthContext';
 import Header from '@/components/Header';
 import ShoppingCart from '@/components/ShoppingCart';
-import { useDriveResourcesInit } from './hooks/useDriveResourcesInit';
-import { FirebaseAuthProvider } from './contexts/FirebaseAuthContext.jsx';
-import { CartProvider } from './hooks/useCart.jsx';
+import { useDriveResourcesInit } from '@/hooks/useDriveResourcesInit';
+import { FirebaseAuthProvider } from '@/contexts/FirebaseAuthContext';
+import { CartProvider } from '@/hooks/useCart';
 
-// Lazy load pages
+// Lazy load pages - All using @ alias for consistency
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
 const RFQPage = lazy(() => import('@/pages/RFQPage'));
@@ -24,7 +23,9 @@ const StorePage = lazy(() => import('@/pages/StorePage'));
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
 const SuccessPage = lazy(() => import('@/pages/SuccessPage'));
 const CompleteProfilePage = lazy(() => import('@/pages/CompleteProfilePage'));
+const CalculatorPage = lazy(() => import('@/pages/CalculatorPage'));
 
+// Loading component
 const LoadingFallback = () => (
   <div className="flex justify-center items-center min-h-screen bg-gray-900">
     <motion.div
@@ -35,7 +36,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Simple Protected Route - only checks authentication
+// Protected Route wrapper for authenticated pages only
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -58,10 +59,14 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header onCartClick={() => setIsCartOpen(true)} />
+      
       <main className="pt-20">
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            {/* Public Routes */}
+            {/* ============================================ */}
+            {/* PUBLIC ROUTES - No authentication required */}
+            {/* ============================================ */}
+            
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/products" element={<ProductsPage />} />
@@ -70,8 +75,15 @@ function App() {
             <Route path="/account" element={<AccountPage />} />
             <Route path="/store" element={<StorePage />} />
             <Route path="/success" element={<SuccessPage />} />
+            <Route path="/calculators" element={<CalculatorPage />} />
+            
+            {/* RFQ Page - PUBLIC (No authentication required) */}
+            <Route path="/rfq" element={<RFQPage />} />
 
-            {/* Protected Routes - All require authentication */}
+            {/* ============================================ */}
+            {/* PROTECTED ROUTES - Authentication required */}
+            {/* ============================================ */}
+            
             <Route
               path="/complete-profile"
               element={
@@ -80,7 +92,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+            
             <Route
               path="/dashboard"
               element={
@@ -89,16 +101,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            <Route
-              path="/rfq"
-              element={
-                <ProtectedRoute>
-                  <RFQPage />
-                </ProtectedRoute>
-              }
-            />
-
+            
             <Route
               path="/admin"
               element={
@@ -108,7 +111,7 @@ function App() {
               }
             />
 
-            {/* Catch-all */}
+            {/* Catch-all redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
@@ -119,16 +122,22 @@ function App() {
   );
 }
 
+// Main App Wrapper with Providers
 function AppWrapper() {
   return (
     <FirebaseAuthProvider>
       <CartProvider>
         <Router basename="/">
           <Helmet>
-            <title>Buildnet AI</title>
-            <meta name="description" content="Kerala's premier construction industry directory. Find contractors, suppliers, architects, engineers, and equipment providers across Kerala." />
+            <title>BuildNet AI - Kerala Construction Directory</title>
+            <meta 
+              name="description" 
+              content="Kerala's premier construction industry directory. Find contractors, suppliers, architects, engineers, and equipment providers across Kerala. Send professional RFQs via WhatsApp." 
+            />
+            <meta name="keywords" content="construction, Kerala, suppliers, contractors, RFQ, building materials" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <meta name="theme-color" content="#10b981" />
+            <link rel="canonical" href="https://buildnetdirectory.web.app" />
           </Helmet>
           <App />
         </Router>
@@ -138,3 +147,4 @@ function AppWrapper() {
 }
 
 export default AppWrapper;
+                             
